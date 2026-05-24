@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+from agregar_usuario import mostrar_formulario_cliente
 
 class MenuTaller:
     def __init__(self, root):
@@ -58,8 +59,26 @@ class MenuTaller:
 
     def mostrar_clientes(self):
         self.limpiar_pantalla()
-        tk.Label(self.area_principal, text="Gestión de Clientes", font=("Arial", 18), bg="white").pack(pady=20)
-        tk.Button(self.area_principal, text="+ Nuevo Cliente", bg=self.color_acento, fg="white", padx=10).pack()
+        
+        tk.Label(
+            self.area_principal, 
+            text="Gestión de Clientes", 
+            font=("Arial", 18), 
+            bg="white"
+        ).pack(pady=20)
+        
+        def ir_al_formulario():
+            self.limpiar_pantalla()
+            mostrar_formulario_cliente(self.area_principal)
+            
+        tk.Button(
+            self.area_principal, 
+            text="+ Nuevo Cliente", 
+            bg=self.color_acento, 
+            fg="white", 
+            padx=10,
+            command=ir_al_formulario
+        ).pack()
 
     def mostrar_servicios(self):
         self.limpiar_pantalla()
