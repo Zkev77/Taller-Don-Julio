@@ -1,7 +1,7 @@
-import hashlib
 import tkinter as tk
 import customtkinter
-from interfaz import MenuTaller  
+from database import Database
+from interfaz import MenuTaller
 
 customtkinter.set_appearance_mode('dark')
 customtkinter.set_default_color_theme('blue')
@@ -12,25 +12,23 @@ root.title("Acceso al Sistema")
 root.resizable(False, False)
 
 def validar_login():
-    usuario = entry1.get()
-    clave = entry2.get()
+    usuario = entry1.get().strip()
+    clave = entry2.get().strip()
 
     if not usuario or not clave:
-        print("Por favor, llene todos los campos")
+        label_error.configure(text="Por favor, llene todos los campos")
         return
 
-    CLAVE_FIJA = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"
+    db = Database()
+    exito, mensaje, rol = db.verify_user(usuario, clave)
 
-    clave_hash = hashlib.sha256(clave.encode()).hexdigest()
-
-    if usuario == "admin" and clave_hash == CLAVE_FIJA:
-        root.destroy()  
-        
+    if exito:
+        root.destroy()   
         root_menu = tk.Tk()
-        app = MenuTaller(root_menu)
+        app = MenuTaller(root_menu, rol)   
         root_menu.mainloop()
     else:
-        print("Usuario o contraseña incorrectos")
+        label_error.configure(text=mensaje)
 
 frame = customtkinter.CTkFrame(master=root)
 frame.pack(pady=20, padx=60, fill='both', expand=True)
@@ -38,12 +36,14 @@ frame.pack(pady=20, padx=60, fill='both', expand=True)
 label = customtkinter.CTkLabel(master=frame, text='Taller Don Julio', font=('Arial', 18, 'bold'))
 label.pack(pady=12, padx=10)
 
-# Aquí es donde se definen entry1 y entry2 para que la función los pueda leer
 entry1 = customtkinter.CTkEntry(master=frame, placeholder_text='Username')
 entry1.pack(pady=12, padx=10)
 
 entry2 = customtkinter.CTkEntry(master=frame, placeholder_text='Password', show='*')
 entry2.pack(pady=12, padx=10)
+
+label_error = customtkinter.CTkLabel(master=frame, text="", font=('Arial', 10), text_color="red")
+label_error.pack(pady=5)
 
 button = customtkinter.CTkButton(master=frame, text='Iniciar Sesión', command=validar_login)
 button.pack(pady=12, padx=10)
