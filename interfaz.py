@@ -84,11 +84,6 @@ class MenuTaller:
         tk.Label(self.area_principal, text="[Módulo en desarrollo - próximamente]", bg="white", fg="blue").pack(pady=20)
 
     def mostrar_repuestos(self):
-        self.limpiar_pantalla()
-        tk.Label(self.area_principal, text="Inventario de Repuestos", font=("Arial", 18), bg="white").pack(pady=20)
-        if self.rol != 'admin':
-            tk.Label(self.area_principal, text="(Solo lectura - consulta de stock)", bg="white", fg="blue").pack()
-        tk.Label(self.area_principal, text="[Módulo en desarrollo - próximamente]", bg="white", fg="blue").pack(pady=20)
 
     def mostrar_reportes(self):
         self.limpiar_pantalla()
