@@ -30,17 +30,25 @@ def validar_login():
     else:
         label_error.configure(text=mensaje)
 
+def pasar_a_clave(event):
+    entry2.focus()
+
+def ejecutar_login(event):
+    validar_login()
+
 frame = customtkinter.CTkFrame(master=root)
 frame.pack(pady=20, padx=60, fill='both', expand=True)
 
-label = customtkinter.CTkLabel(master=frame, text='Taller Don Julio', font=('Arial', 18, 'bold'))
+label = customtkinter.CTkLabel(master=frame, text='Taller Mecanico Don Julio', font=('Arial', 18, 'bold'))
 label.pack(pady=12, padx=10)
 
-entry1 = customtkinter.CTkEntry(master=frame, placeholder_text='Username')
+entry1 = customtkinter.CTkEntry(master=frame, placeholder_text='Usuario')
 entry1.pack(pady=12, padx=10)
+entry1.bind('<Key-Return>', pasar_a_clave)
 
-entry2 = customtkinter.CTkEntry(master=frame, placeholder_text='Password', show='*')
+entry2 = customtkinter.CTkEntry(master=frame, placeholder_text='Contraseña', show='*')
 entry2.pack(pady=12, padx=10)
+entry2.bind('<Key-Return>', ejecutar_login)
 
 label_error = customtkinter.CTkLabel(master=frame, text="", font=('Arial', 10), text_color="red")
 label_error.pack(pady=5)
