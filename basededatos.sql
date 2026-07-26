@@ -38,7 +38,7 @@ CREATE TABLE ordenes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     vehiculo_id INT NOT NULL,
     descripcion TEXT,
-    estado VARCHAR(50) DEFAULT 'Pendiente',
+    estado VARCHAR(50) DEFAULT 'Ingresado',
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (vehiculo_id) REFERENCES vehiculos(id) ON DELETE CASCADE
 );
