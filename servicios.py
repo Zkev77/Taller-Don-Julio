@@ -167,18 +167,18 @@ class GestionServicios:
         if not id_orden:
             return
 
-        # Obtener el estado actual de la orden
+        # Obtener el estado actual desde la base de datos
         datos = self.db.obtener_orden_completa(id_orden)
         if not datos:
             messagebox.showerror("Error", "No se encontró la orden", parent=self.frame)
             return
 
         estado_actual = datos['estado']
-        estados = ['Pendiente', 'Diagnóstico', 'Presupuesto', 'Ejecución', 'Finalizado', 'Entregado']
+        estados = ['Ingresado', 'Revisión', 'Trabajando', 'Completado', 'Entregado']
 
         ventana = Toplevel(self.parent)
         ventana.title("Cambiar Estado")
-        ventana.geometry("300x180")
+        ventana.geometry("300x200")
         ventana.configure(bg="white")
 
         tk.Label(ventana, text="Estado actual:", bg="white", font=("Arial", 10)).pack(pady=5)
@@ -187,7 +187,7 @@ class GestionServicios:
         tk.Label(ventana, text="Seleccione nuevo estado:", bg="white").pack(pady=5)
         combo_estado = ttk.Combobox(ventana, values=estados, width=20, state="readonly")
         combo_estado.pack(pady=5)
-        combo_estado.set(estado_actual)  # <-- AQUÍ SE CARGA EL ESTADO ACTUAL
+        combo_estado.set(estado_actual)  # <--- CARGA EL ESTADO ACTUAL
 
         def actualizar():
             nuevo_estado = combo_estado.get()
@@ -199,12 +199,18 @@ class GestionServicios:
                 ventana.destroy()
                 return
 
+            # 1. Actualizar en la base de datos
             exito, mensaje = self.db.actualizar_estado_orden(id_orden, nuevo_estado)
             if exito:
                 messagebox.showinfo("Éxito", f"Estado actualizado a '{nuevo_estado}'", parent=ventana)
-                ventana.destroy()
+                ventana.destroy()  # Cerramos la ventana modal
+                
+                # 2. Recargar datos del Treeview
                 self.cargar_datos()
-                self.tree.update()  # Forzar redibujo inmediato
+                
+                # 3. Forzar refresco del marco contenedor
+                self.frame.update_idletasks()
+                self.frame.update()
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
