@@ -86,7 +86,7 @@ class GestionServicios:
         """Abre la ventana para crear una nueva orden de servicio"""
         ventana = Toplevel(self.parent)
         ventana.title("Nueva Orden de Servicio")
-        ventana.geometry("500x400")
+        ventana.geometry("600x400")
         ventana.resizable(False, False)
         ventana.configure(bg="white")
 
@@ -167,33 +167,50 @@ class GestionServicios:
         if not id_orden:
             return
 
+        # Obtener el estado actual de la orden
+        datos = self.db.obtener_orden_completa(id_orden)
+        if not datos:
+            messagebox.showerror("Error", "No se encontró la orden", parent=self.frame)
+            return
+
+        estado_actual = datos['estado']
         estados = ['Pendiente', 'Diagnóstico', 'Presupuesto', 'Ejecución', 'Finalizado', 'Entregado']
+
         ventana = Toplevel(self.parent)
         ventana.title("Cambiar Estado")
-        ventana.geometry("300x150")
+        ventana.geometry("300x180")
         ventana.configure(bg="white")
 
-        tk.Label(ventana, text="Nuevo estado:", bg="white").pack(pady=10)
-        combo_estado = ttk.Combobox(ventana, values=estados, width=20)
-        combo_estado.pack(pady=10)
-        combo_estado.set('Pendiente')
+        tk.Label(ventana, text="Estado actual:", bg="white", font=("Arial", 10)).pack(pady=5)
+        tk.Label(ventana, text=f"🔹 {estado_actual}", bg="white", font=("Arial", 10, "bold"), fg="#e67e22").pack(pady=5)
+
+        tk.Label(ventana, text="Seleccione nuevo estado:", bg="white").pack(pady=5)
+        combo_estado = ttk.Combobox(ventana, values=estados, width=20, state="readonly")
+        combo_estado.pack(pady=5)
+        combo_estado.set(estado_actual)  # <-- AQUÍ SE CARGA EL ESTADO ACTUAL
 
         def actualizar():
             nuevo_estado = combo_estado.get()
             if not nuevo_estado:
                 messagebox.showerror("Error", "Seleccione un estado", parent=ventana)
                 return
+            if nuevo_estado == estado_actual:
+                messagebox.showinfo("Aviso", "El estado seleccionado es el mismo", parent=ventana)
+                ventana.destroy()
+                return
+
             exito, mensaje = self.db.actualizar_estado_orden(id_orden, nuevo_estado)
             if exito:
                 messagebox.showinfo("Éxito", f"Estado actualizado a '{nuevo_estado}'", parent=ventana)
                 ventana.destroy()
                 self.cargar_datos()
+                self.tree.update()  # Forzar redibujo inmediato
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
         btn_guardar = tk.Button(ventana, text="Actualizar", bg="#27ae60", fg="white", command=actualizar)
         btn_guardar.pack(pady=10)
-
+        
     def eliminar_orden(self):
         id_orden = self.obtener_seleccionado()
         if not id_orden:
@@ -202,6 +219,11 @@ class GestionServicios:
             exito, mensaje = self.db.eliminar_orden(id_orden)
             if exito:
                 messagebox.showinfo("Éxito", "Orden eliminada", parent=self.frame)
-                self.cargar_datos()
+                try:
+                    self.cargar_datos()
+                    self.tree.update()
+                    self.tree.selection_remove(self.tree.selection())
+                except Exception as e:
+                    messagebox.showerror("Error", f"No se pudo actualizar la lista: {e}", parent=self.frame)
             else:
                 messagebox.showerror("Error", mensaje, parent=self.frame)

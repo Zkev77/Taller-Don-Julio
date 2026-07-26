@@ -7,7 +7,7 @@ customtkinter.set_appearance_mode('dark')
 customtkinter.set_default_color_theme('blue')
 
 root = customtkinter.CTk()
-root.geometry('350x300')
+root.geometry('800x600')
 root.title("Acceso al Sistema")
 root.resizable(False, False)
 

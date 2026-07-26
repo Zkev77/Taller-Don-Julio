@@ -218,7 +218,11 @@ class GestionClientes:
             exito, mensaje = self.db.eliminar_cliente(id_cliente)
             if exito:
                 messagebox.showinfo("Éxito", "Cliente eliminado", parent=self.frame)
-                self.cargar_datos()
-                self.tree.selection_remove(self.tree.selection())
+                try:
+                    self.cargar_datos()
+                    self.tree.update()  
+                    self.tree.selection_remove(self.tree.selection())
+                except Exception as e:
+                    messagebox.showerror("Error", f"No se pudo actualizar la lista: {e}", parent=self.frame)
             else:
                 messagebox.showerror("Error", mensaje, parent=self.frame)

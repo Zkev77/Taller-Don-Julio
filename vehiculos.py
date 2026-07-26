@@ -173,6 +173,13 @@ class GestionVehiculos:
         btn_guardar = tk.Button(ventana, text="Guardar", bg="#27ae60", fg="white", command=guardar)
         btn_guardar.grid(row=4, column=0, columnspan=2, pady=20)
 
+        def convertir_mayusculas(event):
+            contenido = entry_placa.get().upper()
+            entry_placa.delete(0, tk.END)
+            entry_placa.insert(0, contenido)
+
+        entry_placa.bind("<KeyRelease>", convertir_mayusculas)
+
     def eliminar_vehiculo(self):
         id_vehiculo = self.obtener_seleccionado()
         if not id_vehiculo:
@@ -181,8 +188,12 @@ class GestionVehiculos:
             exito, mensaje = self.db.eliminar_vehiculo(id_vehiculo)
             if exito:
                 messagebox.showinfo("Éxito", "Vehículo eliminado", parent=self.frame)
-                self.cargar_datos()
-                self.tree.selection_remove(self.tree.selection())
+                try:
+                    self.cargar_datos()
+                    self.tree.update()
+                    self.tree.selection_remove(self.tree.selection())
+                except Exception as e:
+                    messagebox.showerror("Error", f"No se pudo actualizar la lista: {e}", parent=self.frame)
             else:
                 messagebox.showerror("Error", mensaje, parent=self.frame)
 

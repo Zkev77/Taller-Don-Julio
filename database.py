@@ -102,8 +102,11 @@ class Database:
         duplicado = self.fetch_all("SELECT id FROM clientes WHERE cedula = %s AND id != %s", (cedula, id_cliente))
         if duplicado:
             return False, "La cédula ya está en uso por otro cliente"
+        if self.existe_telefono(telefono, id_cliente):
+            return False, "El número de teléfono ya está en uso por otro cliente"
         query = "UPDATE clientes SET cedula=%s, nombre=%s, telefono=%s, email=%s WHERE id=%s"
-        return self.execute_query(query, (cedula, nombre, telefono, email, id_cliente))
+        exito, mensaje, _ = self.execute_query(query, (cedula, nombre, telefono, email, id_cliente))
+        return exito, mensaje
     
     def existe_telefono(self, telefono, id_cliente=None):
         if id_cliente:
@@ -116,7 +119,8 @@ class Database:
 
     def eliminar_cliente(self, id_cliente):
         query = "DELETE FROM clientes WHERE id=%s"
-        return self.execute_query(query, (id_cliente,))
+        exito, mensaje, _ = self.execute_query(query, (id_cliente,))
+        return exito, mensaje
 
     def obtener_cliente_por_id(self, id_cliente):
         res = self.fetch_all("SELECT id, cedula, nombre, telefono, email FROM clientes WHERE id=%s", (id_cliente,))
@@ -149,7 +153,8 @@ class Database:
 
     def eliminar_vehiculo(self, id_vehiculo):
         query = "DELETE FROM vehiculos WHERE id=%s"
-        return self.execute_query(query, (id_vehiculo,))
+        exito, mensaje, _ = self.execute_query(query, (id_vehiculo,))
+        return exito, mensaje
 
     def obtener_vehiculo_por_id(self, id_vehiculo):
         res = self.fetch_all("SELECT id, placa, marca, modelo, cliente_id FROM vehiculos WHERE id=%s", (id_vehiculo,))
@@ -202,7 +207,8 @@ class Database:
 
     def eliminar_orden(self, id_orden):
         query = "DELETE FROM ordenes WHERE id=%s"
-        return self.execute_query(query, (id_orden,))
+        exito, mensaje, _ = self.execute_query(query, (id_orden,))
+        return exito, mensaje
 
     def listar_repuestos(self):
         return self.fetch_all("SELECT id, nombre, descripcion, precio, stock, proveedor FROM repuestos ORDER BY nombre")
@@ -217,7 +223,8 @@ class Database:
 
     def eliminar_repuesto(self, id_repuesto):
         query = "DELETE FROM repuestos WHERE id=%s"
-        return self.execute_query(query, (id_repuesto,))
+        exito, mensaje, _ = self.execute_query(query, (id_repuesto,))
+        return exito, mensaje
 
     def obtener_repuesto_por_id(self, id_repuesto):
         res = self.fetch_all("SELECT id, nombre, descripcion, precio, stock, proveedor FROM repuestos WHERE id=%s", (id_repuesto,))

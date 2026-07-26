@@ -14,11 +14,14 @@ VALUES ('admin', SHA2('admin123', 256), 'admin');
 INSERT INTO usuarios (username, password, rol) 
 VALUES ('mecanico', SHA2('mecanico123', 256), 'mecanico');
 
-CREATE TABLE clientes (
+
+
+CREATE TABLE IF NOT EXISTS clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cedula VARCHAR(8) NOT NULL UNIQUE,
     nombre VARCHAR(100) NOT NULL,
     telefono VARCHAR(11),
+    UNIQUE (telefono),
     email VARCHAR(100)
 );
 
@@ -76,5 +79,39 @@ CREATE TABLE IF NOT EXISTS orden_repuestos (
     FOREIGN KEY (repuesto_id) REFERENCES repuestos(id)
 );
 
-ALTER TABLE clientes ADD UNIQUE INDEX idx_telefono (telefono);
+CREATE TABLE IF NOT EXISTS personal (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    especialidad VARCHAR(100),
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    fecha_contrato DATE,
+    activo BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS proveedores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    contacto VARCHAR(100),
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion TEXT,
+    activo BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS detalle_mano_obra (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    orden_id INT NOT NULL,
+    personal_id INT NOT NULL,
+    descripcion TEXT NOT NULL,
+    horas DECIMAL(5,2) DEFAULT 0,
+    costo_por_hora DECIMAL(10,2) DEFAULT 0,
+    total DECIMAL(10,2) DEFAULT 0,
+    fecha_inicio DATETIME,
+    fecha_fin DATETIME,
+    FOREIGN KEY (orden_id) REFERENCES ordenes(id) ON DELETE CASCADE,
+    FOREIGN KEY (personal_id) REFERENCES personal(id) ON DELETE RESTRICT
+);
+
  
