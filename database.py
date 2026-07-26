@@ -203,7 +203,8 @@ class Database:
 
     def actualizar_estado_orden(self, id_orden, nuevo_estado):
         query = "UPDATE ordenes SET estado = %s WHERE id = %s"
-        return self.execute_query(query, (nuevo_estado, id_orden))
+        exito, mensaje, _ = self.execute_query(query, (nuevo_estado, id_orden))
+        return exito, mensaje
 
     def eliminar_orden(self, id_orden):
         query = "DELETE FROM ordenes WHERE id=%s"
