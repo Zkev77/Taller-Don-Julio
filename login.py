@@ -6,10 +6,15 @@ from interfaz import MenuTaller
 customtkinter.set_appearance_mode('dark')
 customtkinter.set_default_color_theme('blue')
 
+def maximizar_ventana(ventana):
+    try:
+        ventana.attributes('-zoomed', True)   
+    except Exception:
+        ventana.state('zoomed')             
+
 root = customtkinter.CTk()
-root.geometry('800x600')
 root.title("Acceso al Sistema")
-root.resizable(False, False)
+maximizar_ventana(root)
 
 def validar_login():
     usuario = entry1.get().strip()
@@ -23,9 +28,10 @@ def validar_login():
     exito, mensaje, rol = db.verify_user(usuario, clave)
 
     if exito:
-        root.destroy()   
-        root_menu = tk.Tk()
-        app = MenuTaller(root_menu, rol)   
+        root.destroy()
+        root_menu = customtkinter.CTk() 
+        app = MenuTaller(root_menu, rol)
+        maximizar_ventana(root_menu)      
         root_menu.mainloop()
     else:
         label_error.configure(text=mensaje)
