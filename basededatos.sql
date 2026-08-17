@@ -114,4 +114,16 @@ CREATE TABLE IF NOT EXISTS detalle_mano_obra (
     FOREIGN KEY (personal_id) REFERENCES personal(id) ON DELETE RESTRICT
 );
 
+CREATE TABLE IF NOT EXISTS logs_auditoria (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT,
+    usuario_nombre VARCHAR(50),
+    tabla_afectada VARCHAR(50) NOT NULL,
+    registro_id INT NOT NULL,
+    accion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    descripcion TEXT,
+    fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
  

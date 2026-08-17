@@ -164,6 +164,16 @@ class GestionVehiculos:
                 exito, mensaje = self.db.actualizar_vehiculo(id_vehiculo, placa, marca, modelo, cliente_id)
 
             if exito:
+                accion = "INSERT" if id_vehiculo is None else "UPDATE"
+                desc = f"{accion} en vehiculos: {placa} - {marca} {modelo}"
+                self.db.registrar_log(
+                    usuario_id=1,
+                    usuario_nombre="admin",
+                    tabla="vehiculos",
+                    registro_id=id_vehiculo or 0,  # Si es nuevo, usa el último ID o 0
+                    accion=accion,
+                    descripcion=desc
+                )
                 messagebox.showinfo("Éxito", mensaje, parent=ventana)
                 ventana.destroy()
                 self.cargar_datos()
@@ -184,9 +194,21 @@ class GestionVehiculos:
         id_vehiculo = self.obtener_seleccionado()
         if not id_vehiculo:
             return
+
+        datos_vehiculo = self.db.obtener_vehiculo_por_id(id_vehiculo)
+        placa = datos_vehiculo['placa'] if datos_vehiculo else "desconocida"
+
         if messagebox.askyesno("Confirmar", "¿Eliminar este vehículo?"):
             exito, mensaje = self.db.eliminar_vehiculo(id_vehiculo)
             if exito:
+                self.db.registrar_log(
+                    usuario_id=1,
+                    usuario_nombre="admin",
+                    tabla="vehiculos",
+                    registro_id=id_vehiculo,
+                    accion="DELETE",
+                    descripcion=f"Eliminado vehículo ID {id_vehiculo} - Placa {placa}"
+                )
                 messagebox.showinfo("Éxito", "Vehículo eliminado", parent=self.frame)
                 try:
                     self.cargar_datos()

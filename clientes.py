@@ -201,6 +201,16 @@ class GestionClientes:
                 exito, mensaje = self.db.actualizar_cliente(id_cliente, cedula_completa, nombre, telefono_completo, email)
 
             if exito:
+                accion = "INSERT" if id_cliente is None else "UPDATE"
+                desc = f"{accion} en clientes: {cedula_completa} - {nombre}"
+                self.db.registrar_log(
+                    usuario_id=1,  
+                    usuario_nombre="admin",  
+                    tabla="clientes",
+                    registro_id=cliente_id or id_cliente,
+                    accion=accion,
+                    descripcion=desc
+                )
                 messagebox.showinfo("Éxito", mensaje, parent=ventana)
                 ventana.destroy()
                 self.cargar_datos()
@@ -214,15 +224,18 @@ class GestionClientes:
         id_cliente = self.obtener_seleccionado()
         if not id_cliente:
             return
+
+        datos_cliente = self.db.obtener_cliente_por_id(id_cliente)
+        nombre_cliente = datos_cliente['nombre'] if datos_cliente else "desconocido"
+
         if messagebox.askyesno("Confirmar", "¿Eliminar este cliente? Se eliminarán también sus vehículos."):
             exito, mensaje = self.db.eliminar_cliente(id_cliente)
             if exito:
-                messagebox.showinfo("Éxito", "Cliente eliminado", parent=self.frame)
-                try:
-                    self.cargar_datos()
-                    self.tree.update()  
-                    self.tree.selection_remove(self.tree.selection())
-                except Exception as e:
-                    messagebox.showerror("Error", f"No se pudo actualizar la lista: {e}", parent=self.frame)
-            else:
-                messagebox.showerror("Error", mensaje, parent=self.frame)
+                self.db.registrar_log(
+                    usuario_id=1,
+                    usuario_nombre="admin",
+                    tabla="clientes",
+                    registro_id=id_cliente,
+                    accion="DELETE",
+                    descripcion=f"Eliminado cliente ID {id_cliente} - {nombre_cliente}"
+                )

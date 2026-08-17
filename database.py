@@ -252,3 +252,70 @@ class Database:
         if exito:
             self.actualizar_stock(repuesto_id, cantidad)
         return exito, mensaje
+
+    def registrar_log(self, usuario_id, usuario_nombre, tabla, registro_id, accion, descripcion=""):
+        query = """
+            INSERT INTO logs_auditoria (usuario_id, usuario_nombre, tabla_afectada, registro_id, accion, descripcion)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        return self.execute_query(query, (usuario_id, usuario_nombre, tabla, registro_id, accion, descripcion))
+
+    def listar_logs(self, limite=100):
+        query = """
+            SELECT id, usuario_nombre, tabla_afectada, registro_id, accion, descripcion, fecha_hora
+            FROM logs_auditoria
+            ORDER BY fecha_hora DESC
+            LIMIT %s
+        """
+        return self.fetch_all(query, (limite,))
+
+    def listar_logs_por_tabla(self, tabla):
+        query = """
+            SELECT id, usuario_nombre, tabla_afectada, registro_id, accion, descripcion, fecha_hora
+            FROM logs_auditoria
+            WHERE tabla_afectada = %s
+            ORDER BY fecha_hora DESC
+        """
+        return self.fetch_all(query, (tabla,))
+
+    def contar_logs_por_accion(self):
+        query = """
+            SELECT accion, COUNT(*) as total
+            FROM logs_auditoria
+            GROUP BY accion
+        """
+        return self.fetch_all(query)
+
+    def obtener_estadisticas_taller(self):
+        """Retorna estadísticas generales del taller"""
+        stats = {}
+        
+        clientes = self.fetch_all("SELECT COUNT(*) as total FROM clientes")
+        stats['total_clientes'] = clientes[0]['total'] if clientes else 0
+        
+        vehiculos = self.fetch_all("SELECT COUNT(*) as total FROM vehiculos")
+        stats['total_vehiculos'] = vehiculos[0]['total'] if vehiculos else 0
+        
+        ordenes_estado = self.fetch_all("""
+            SELECT estado, COUNT(*) as total 
+            FROM ordenes 
+            GROUP BY estado
+        """)
+        stats['ordenes_por_estado'] = ordenes_estado or []
+        
+        ordenes_mes = self.fetch_all("""
+            SELECT COUNT(*) as total 
+            FROM ordenes 
+            WHERE MONTH(fecha) = MONTH(CURRENT_DATE()) 
+            AND YEAR(fecha) = YEAR(CURRENT_DATE())
+        """)
+        stats['ordenes_mes'] = ordenes_mes[0]['total'] if ordenes_mes else 0
+        
+        repuestos_bajo_stock = self.fetch_all("""
+            SELECT COUNT(*) as total 
+            FROM repuestos 
+            WHERE stock < 5
+        """)
+        stats['repuestos_bajo_stock'] = repuestos_bajo_stock[0]['total'] if repuestos_bajo_stock else 0
+        
+        return stats

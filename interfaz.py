@@ -4,6 +4,8 @@ from vehiculos import GestionVehiculos
 from database import Database
 from servicios import GestionServicios
 from repuestos import GestionRepuestos
+from reportes import GestionReportes
+
 
 # Configuración global de CustomTkinter
 ctk.set_appearance_mode("dark")
@@ -104,6 +106,7 @@ class MenuTaller:
 
     def mostrar_reportes(self):
         self.limpiar_pantalla()
+        GestionReportes(self.area_principal, self.rol)
 
     def mostrar_config(self):
         self.limpiar_pantalla()

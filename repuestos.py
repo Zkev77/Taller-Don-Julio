@@ -179,6 +179,16 @@ class GestionRepuestos:
                 exito, mensaje = self.db.actualizar_repuesto(id_repuesto, nombre, descripcion, precio_val, stock_val, proveedor)
 
             if exito:
+                accion = "INSERT" if id_repuesto is None else "UPDATE"
+                desc = f"{accion} en repuestos: {nombre}"
+                self.db.registrar_log(
+                    usuario_id=1,
+                    usuario_nombre="admin",
+                    tabla="repuestos",
+                    registro_id=id_repuesto or 0,
+                    accion=accion,
+                    descripcion=desc
+                )
                 messagebox.showinfo("Éxito", mensaje, parent=ventana)
                 ventana.destroy()
                 self.cargar_datos()
@@ -195,6 +205,14 @@ class GestionRepuestos:
         if messagebox.askyesno("Confirmar", "¿Eliminar este repuesto?"):
             exito, mensaje = self.db.eliminar_repuesto(id_repuesto)
             if exito:
+                self.db.registrar_log(
+                    usuario_id=1,
+                    usuario_nombre="admin",
+                    tabla="repuestos",
+                    registro_id=id_repuesto,
+                    accion="DELETE",
+                    descripcion=f"Eliminado repuesto ID {id_repuesto}"
+                )
                 messagebox.showinfo("Éxito", "Repuesto eliminado", parent=self.frame)
                 try:
                     self.cargar_datos()

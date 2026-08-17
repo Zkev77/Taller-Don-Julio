@@ -10,7 +10,6 @@ class GestionServicios:
         self.frame = tk.Frame(parent, bg="white")
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Toolbar
         self.toolbar = tk.Frame(self.frame, bg="white")
         self.toolbar.pack(fill="x", pady=5)
 
@@ -34,7 +33,6 @@ class GestionServicios:
                                        command=self.cargar_datos)
         self.btn_refrescar.pack(side="left", padx=5)
 
-        # Treeview
         self.tree = ttk.Treeview(self.frame, columns=("ID", "Fecha", "Vehículo", "Cliente", "Descripción", "Estado"),
                                  show="headings")
         self.tree.heading("ID", text="ID")
@@ -124,6 +122,16 @@ class GestionServicios:
 
             exito, mensaje = self.db.crear_orden(vehiculo_id, descripcion, "Pendiente")
             if exito:
+                accion = "INSERT" if id_orden is None else "UPDATE"
+                desc = f"{accion} en ordenes: {descripcion[:50]}..."
+                self.db.registrar_log(
+                    usuario_id=1,
+                    usuario_nombre="admin",
+                    tabla="ordenes",
+                    registro_id=id_orden or 0,
+                    accion=accion,
+                    descripcion=desc
+                )
                 messagebox.showinfo("Éxito", "Orden creada correctamente", parent=ventana)
                 ventana.destroy()
                 self.cargar_datos()
@@ -196,6 +204,14 @@ class GestionServicios:
 
             exito, mensaje = self.db.actualizar_estado_orden(id_orden, nuevo_estado)
             if exito:
+                self.db.registrar_log(
+                    usuario_id=1,
+                    usuario_nombre="admin",
+                    tabla="ordenes",
+                    registro_id=id_orden,
+                    accion="UPDATE",
+                    descripcion=f"Estado cambiado de '{estado_actual}' a '{nuevo_estado}'"
+                )
                 messagebox.showinfo("Éxito", f"Estado actualizado a '{nuevo_estado}'", parent=ventana)
                 ventana.destroy()  
                 
@@ -216,12 +232,13 @@ class GestionServicios:
         if messagebox.askyesno("Confirmar", "¿Eliminar esta orden permanentemente?"):
             exito, mensaje = self.db.eliminar_orden(id_orden)
             if exito:
+                self.db.registrar_log(
+                    usuario_id=1,
+                    usuario_nombre="admin",
+                    tabla="ordenes",
+                    registro_id=id_orden,
+                    accion="DELETE",
+                    descripcion=f"Eliminada orden ID {id_orden}"
+                )
                 messagebox.showinfo("Éxito", "Orden eliminada", parent=self.frame)
-                try:
-                    self.cargar_datos()
-                    self.tree.update()
-                    self.tree.selection_remove(self.tree.selection())
-                except Exception as e:
-                    messagebox.showerror("Error", f"No se pudo actualizar la lista: {e}", parent=self.frame)
-            else:
-                messagebox.showerror("Error", mensaje, parent=self.frame)
+                self.cargar_datos()
