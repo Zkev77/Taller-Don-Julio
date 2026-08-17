@@ -83,14 +83,12 @@ class GestionServicios:
         return item['values'][0]  # ID
 
     def abrir_formulario_nueva_orden(self):
-        """Abre la ventana para crear una nueva orden de servicio"""
         ventana = Toplevel(self.parent)
         ventana.title("Nueva Orden de Servicio")
         ventana.geometry("600x400")
         ventana.resizable(False, False)
         ventana.configure(bg="white")
 
-        # Obtener vehículos para combobox
         vehiculos = self.db.listar_vehiculos_con_cliente()
         if not vehiculos:
             messagebox.showerror("Error", "No hay vehículos registrados. Cree un vehículo primero.", parent=ventana)
@@ -136,7 +134,6 @@ class GestionServicios:
         btn_guardar.grid(row=2, column=0, columnspan=2, pady=20)
 
     def abrir_detalle_orden(self):
-        """Muestra una ventana con la información completa de la orden seleccionada"""
         id_orden = self.obtener_seleccionado()
         if not id_orden:
             return
@@ -162,12 +159,10 @@ class GestionServicios:
         btn_cerrar.pack(pady=10)
 
     def cambiar_estado(self):
-        """Cambia el estado de la orden seleccionada"""
         id_orden = self.obtener_seleccionado()
         if not id_orden:
             return
 
-        # Obtener el estado actual desde la base de datos
         datos = self.db.obtener_orden_completa(id_orden)
         if not datos:
             messagebox.showerror("Error", "No se encontró la orden", parent=self.frame)
@@ -187,7 +182,7 @@ class GestionServicios:
         tk.Label(ventana, text="Seleccione nuevo estado:", bg="white").pack(pady=5)
         combo_estado = ttk.Combobox(ventana, values=estados, width=20, state="readonly")
         combo_estado.pack(pady=5)
-        combo_estado.set(estado_actual)  # <--- CARGA EL ESTADO ACTUAL
+        combo_estado.set(estado_actual)  
 
         def actualizar():
             nuevo_estado = combo_estado.get()
@@ -199,16 +194,13 @@ class GestionServicios:
                 ventana.destroy()
                 return
 
-            # 1. Actualizar en la base de datos
             exito, mensaje = self.db.actualizar_estado_orden(id_orden, nuevo_estado)
             if exito:
                 messagebox.showinfo("Éxito", f"Estado actualizado a '{nuevo_estado}'", parent=ventana)
-                ventana.destroy()  # Cerramos la ventana modal
+                ventana.destroy()  
                 
-                # 2. Recargar datos del Treeview
                 self.cargar_datos()
                 
-                # 3. Forzar refresco del marco contenedor
                 self.frame.update_idletasks()
                 self.frame.update()
             else:
