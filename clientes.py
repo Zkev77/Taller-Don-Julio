@@ -3,10 +3,12 @@ from tkinter import ttk, messagebox, Toplevel
 from database import Database
 
 class GestionClientes:
-    def __init__(self, parent, rol):
+    def __init__(self, parent, rol, usuario_actual):
         self.parent = parent
         self.rol = rol
+        self.usuario_actual = usuario_actual
         self.db = Database()
+        self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
         self.frame = tk.Frame(parent, bg="white")
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -30,6 +32,19 @@ class GestionClientes:
         self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg="#2c3e50", fg="white",
                                        command=self.cargar_datos)
         self.btn_refrescar.pack(side="left", padx=5)
+
+        if self.rol == 'auditor':
+            self.btn_agregar.config(state="disabled")
+            self.btn_editar.config(state="disabled")
+            self.btn_eliminar.config(state="disabled")
+        elif self.rol == 'mecanico':
+            self.toolbar.pack_forget()
+            tk.Label(self.frame, text="⛔ Acceso denegado para mecánicos",
+                    font=("Arial", 12), fg="red", bg="white").pack(pady=20)
+            return  # Sale del __init__ para no mostrar el Treeview
+        elif self.rol in ['admin', 'secretaria']:
+            # CRUD completo (los botones ya están habilitados por defecto)
+            pass
 
         self.tree = ttk.Treeview(self.frame, columns=("ID", "Cédula", "Nombre", "Teléfono", "Email"),
                                  show="headings")
@@ -204,10 +219,10 @@ class GestionClientes:
                 accion = "INSERT" if id_cliente is None else "UPDATE"
                 desc = f"{accion} en clientes: {cedula_completa} - {nombre}"
                 self.db.registrar_log(
-                    usuario_id=1,  
-                    usuario_nombre="admin",  
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
                     tabla="clientes",
-                    registro_id=cliente_id or id_cliente,
+                    registro_id=id_cliente or 0,
                     accion=accion,
                     descripcion=desc
                 )
@@ -232,10 +247,10 @@ class GestionClientes:
             exito, mensaje = self.db.eliminar_cliente(id_cliente)
             if exito:
                 self.db.registrar_log(
-                    usuario_id=1,
-                    usuario_nombre="admin",
-                    tabla="clientes",
-                    registro_id=id_cliente,
-                    accion="DELETE",
-                    descripcion=f"Eliminado cliente ID {id_cliente} - {nombre_cliente}"
-                )
+                  usuario_id=self.usuario_id,
+                  usuario_nombre=self.usuario_actual,
+                  tabla="clientes",
+                  registro_id=id_cliente,
+                  accion="DELETE",
+                  descripcion=f"Eliminado cliente ID {id_cliente} - {nombre_cliente}"
+                ) 

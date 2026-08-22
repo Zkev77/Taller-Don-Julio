@@ -3,12 +3,18 @@ from tkinter import ttk, messagebox, Toplevel
 from database import Database
 
 class GestionReportes:
-    def __init__(self, parent, rol):
+    def __init__(self, parent, rol, usuario_actual=None):  
         self.parent = parent
         self.rol = rol
+        self.usuario_actual = usuario_actual
         self.db = Database()
         self.frame = tk.Frame(parent, bg="white")
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        if self.rol not in ['admin', 'auditor']:
+            tk.Label(self.frame, text="⛔ Acceso denegado\nSolo administradores y auditores pueden ver reportes",
+                     font=("Arial", 14, "bold"), fg="red", bg="white", justify="center").pack(pady=50)
+            return
 
         self.toolbar = tk.Frame(self.frame, bg="white")
         self.toolbar.pack(fill="x", pady=5)
@@ -102,11 +108,10 @@ class GestionReportes:
                  font=("Arial", 12, "bold"), bg="white", fg="#2c3e50").pack(anchor="w", pady=(15, 5))
 
         estado_colores = {
-            'Pendiente': '#f39c12',
-            'Diagnóstico': '#3498db',
-            'Presupuesto': '#9b59b6',
-            'Ejecución': '#2ecc71',
-            'Finalizado': '#1abc9c',
+            'Ingresado': '#f39c12',
+            'Revisión': '#3498db',
+            'Trabajando': '#2ecc71',
+            'Completado': '#1abc9c',
             'Entregado': '#27ae60'
         }
 

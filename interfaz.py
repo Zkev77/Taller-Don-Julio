@@ -12,9 +12,10 @@ ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 class MenuTaller:
-    def __init__(self, root, rol):
+    def __init__(self, root, rol, usuario_actual):
         self.root = root
         self.rol = rol
+        self.usuario_actual = usuario_actual
         self.root.title("Taller Don Julio - Sistema de Gestión Operativa")
         self.root.geometry("1100x600")
         self.root.resizable(True, True)
@@ -57,10 +58,18 @@ class MenuTaller:
         self.mostrar_inicio()
 
     def _is_button_allowed(self, texto):
-        if self.rol == 'admin':
+        if self.rol == 'auditor':
+            return True  
+        elif self.rol == 'admin':
+            if texto == "⚙️ Configuración":
+                return False  
+            return True
+        elif self.rol == 'secretaria':
+            if texto in ["⚙️ Configuración", "📊 Reportes/Auditoría"]:
+                return False
             return True
         elif self.rol == 'mecanico':
-            if texto in ["⚙️ Configuración", "📊 Reportes/Auditoría"]:
+            if texto in ["👥 Clientes", "📦 Repuestos", "⚙️ Configuración", "📊 Reportes/Auditoría"]:
                 return False
             return True
         return True
@@ -90,23 +99,25 @@ class MenuTaller:
 
     def mostrar_clientes(self):
         self.limpiar_pantalla()
-        GestionClientes(self.area_principal, self.rol)
+        GestionClientes(self.area_principal, self.rol, self.usuario_actual)
 
     def mostrar_vehiculos(self):
         self.limpiar_pantalla()
-        GestionVehiculos(self.area_principal, self.rol)
+        GestionVehiculos(self.area_principal, self.rol, self.usuario_actual)
 
     def mostrar_servicios(self):
         self.limpiar_pantalla()
-        GestionServicios(self.area_principal, self.rol)
+        GestionServicios(self.area_principal, self.rol, self.usuario_actual )
 
     def mostrar_repuestos(self):
         self.limpiar_pantalla()
-        GestionRepuestos(self.area_principal, self.rol)
+        GestionRepuestos(self.area_principal, self.rol, self.usuario_actual)
 
     def mostrar_reportes(self):
         self.limpiar_pantalla()
-        GestionReportes(self.area_principal, self.rol)
+        GestionReportes(self.area_principal, self.rol, self.usuario_actual)
 
     def mostrar_config(self):
         self.limpiar_pantalla()
+        from configuracion import GestionConfiguracion
+        GestionConfiguracion(self.area_principal, self.rol, self.usuario_actual)

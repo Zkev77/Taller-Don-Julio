@@ -6,9 +6,10 @@ import sys
 import subprocess
 
 class GestionVehiculos:
-    def __init__(self, parent, rol):
+    def __init__(self, parent, rol, usuario_actual):
         self.parent = parent
         self.rol = rol
+        self.usuario_actual = usuario_actual
         self.db = Database()
         self.frame = tk.Frame(parent, bg="white")
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -37,6 +38,19 @@ class GestionVehiculos:
         self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg="#2c3e50", fg="white",
                                        command=self.cargar_datos)
         self.btn_refrescar.pack(side="left", padx=5)
+
+        self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
+
+        if self.rol == 'auditor':
+            self.btn_agregar.config(state="disabled")
+            self.btn_editar.config(state="disabled")
+            self.btn_eliminar.config(state="disabled")
+        elif self.rol == 'mecanico':
+            self.btn_agregar.config(state="disabled")
+            self.btn_editar.config(state="disabled")
+            self.btn_eliminar.config(state="disabled")
+        elif self.rol in ['admin', 'secretaria']:
+            pass
 
         self.tree = ttk.Treeview(self.frame, columns=("ID", "Placa", "Marca", "Modelo", "Cliente"),
                                  show="headings")
@@ -167,10 +181,10 @@ class GestionVehiculos:
                 accion = "INSERT" if id_vehiculo is None else "UPDATE"
                 desc = f"{accion} en vehiculos: {placa} - {marca} {modelo}"
                 self.db.registrar_log(
-                    usuario_id=1,
-                    usuario_nombre="admin",
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
                     tabla="vehiculos",
-                    registro_id=id_vehiculo or 0,  # Si es nuevo, usa el último ID o 0
+                    registro_id=id_vehiculo or 0,
                     accion=accion,
                     descripcion=desc
                 )
@@ -202,8 +216,8 @@ class GestionVehiculos:
             exito, mensaje = self.db.eliminar_vehiculo(id_vehiculo)
             if exito:
                 self.db.registrar_log(
-                    usuario_id=1,
-                    usuario_nombre="admin",
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
                     tabla="vehiculos",
                     registro_id=id_vehiculo,
                     accion="DELETE",

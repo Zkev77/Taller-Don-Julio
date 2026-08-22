@@ -126,4 +126,11 @@ CREATE TABLE IF NOT EXISTS logs_auditoria (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
+ALTER TABLE usuarios MODIFY rol ENUM('admin', 'mecanico', 'auditor', 'secretaria') NOT NULL DEFAULT 'mecanico';
+
+INSERT IGNORE INTO usuarios (username, password, rol) VALUES
+('Julio', SHA2('admin123', 256), 'admin'),
+('Dayary', SHA2('secretaria123', 256), 'secretaria'),
+('Mecanico1', SHA2('mecanico123', 256), 'mecanico'),
+('Auditor1', SHA2('auditor123', 256), 'auditor');
  

@@ -19,19 +19,16 @@ maximizar_ventana(root)
 def validar_login():
     usuario = entry1.get().strip()
     clave = entry2.get().strip()
-
     if not usuario or not clave:
         label_error.configure(text="Por favor, llene todos los campos")
         return
-
     db = Database()
     exito, mensaje, rol = db.verify_user(usuario, clave)
-
     if exito:
         root.destroy()
-        root_menu = customtkinter.CTk() 
-        app = MenuTaller(root_menu, rol)
-        maximizar_ventana(root_menu)      
+        root_menu = customtkinter.CTk()
+        app = MenuTaller(root_menu, rol, usuario)  
+        maximizar_ventana(root_menu)
         root_menu.mainloop()
     else:
         label_error.configure(text=mensaje)

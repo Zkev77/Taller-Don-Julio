@@ -3,9 +3,10 @@ from tkinter import ttk, messagebox, Toplevel
 from database import Database
 
 class GestionRepuestos:
-    def __init__(self, parent, rol):
+    def __init__(self, parent, rol, usuario_actual):
         self.parent = parent
         self.rol = rol
+        self.usuario_actual = usuario_actual
         self.db = Database()
         self.frame = tk.Frame(parent, bg="white")
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -30,6 +31,20 @@ class GestionRepuestos:
         self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg="#2c3e50", fg="white",
                                        command=self.cargar_datos)
         self.btn_refrescar.pack(side="left", padx=5)
+
+        self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
+
+        if self.rol == 'auditor':
+            self.btn_agregar.config(state="disabled")
+            self.btn_editar.config(state="disabled")
+            self.btn_eliminar.config(state="disabled")
+        elif self.rol == 'mecanico':
+            self.toolbar.pack_forget()
+            tk.Label(self.frame, text="⛔ Acceso denegado para mecánicos",
+                    font=("Arial", 12), fg="red", bg="white").pack(pady=20)
+            return
+        elif self.rol in ['admin', 'secretaria']:
+            pass
 
         self.tree = ttk.Treeview(self.frame, columns=("ID", "Nombre", "Descripción", "Precio", "Stock", "Proveedor"),
                                  show="headings")
@@ -182,8 +197,8 @@ class GestionRepuestos:
                 accion = "INSERT" if id_repuesto is None else "UPDATE"
                 desc = f"{accion} en repuestos: {nombre}"
                 self.db.registrar_log(
-                    usuario_id=1,
-                    usuario_nombre="admin",
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
                     tabla="repuestos",
                     registro_id=id_repuesto or 0,
                     accion=accion,
@@ -206,8 +221,8 @@ class GestionRepuestos:
             exito, mensaje = self.db.eliminar_repuesto(id_repuesto)
             if exito:
                 self.db.registrar_log(
-                    usuario_id=1,
-                    usuario_nombre="admin",
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
                     tabla="repuestos",
                     registro_id=id_repuesto,
                     accion="DELETE",

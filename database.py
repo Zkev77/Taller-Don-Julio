@@ -319,3 +319,7 @@ class Database:
         stats['repuestos_bajo_stock'] = repuestos_bajo_stock[0]['total'] if repuestos_bajo_stock else 0
         
         return stats
+
+    def obtener_id_usuario(self, username):
+        res = self.fetch_all("SELECT id FROM usuarios WHERE username = %s", (username,))
+        return res[0]['id'] if res else None

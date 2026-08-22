@@ -3,10 +3,12 @@ from tkinter import ttk, messagebox, Toplevel, scrolledtext
 from database import Database
 
 class GestionServicios:
-    def __init__(self, parent, rol):
+    def __init__(self, parent, rol, usuario_actual):
         self.parent = parent
         self.rol = rol
+        self.usuario_actual = usuario_actual
         self.db = Database()
+        self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
         self.frame = tk.Frame(parent, bg="white")
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -33,6 +35,18 @@ class GestionServicios:
                                        command=self.cargar_datos)
         self.btn_refrescar.pack(side="left", padx=5)
 
+        # ========== PERMISOS SEGÚN ROL ==========
+        if self.rol == 'auditor':
+            self.btn_nuevo.config(state="disabled")
+            self.btn_cambiar_estado.config(state="disabled")
+            self.btn_eliminar.config(state="disabled")
+        elif self.rol == 'mecanico':
+            self.btn_eliminar.config(state="disabled")  # No puede eliminar
+            # Puede crear y cambiar estado
+        elif self.rol in ['admin', 'secretaria']:
+            pass  # CRUD completo
+
+        # Treeview
         self.tree = ttk.Treeview(self.frame, columns=("ID", "Fecha", "Vehículo", "Cliente", "Descripción", "Estado"),
                                  show="headings")
         self.tree.heading("ID", text="ID")
@@ -120,17 +134,15 @@ class GestionServicios:
                 messagebox.showerror("Error", "Vehículo no válido", parent=ventana)
                 return
 
-            exito, mensaje = self.db.crear_orden(vehiculo_id, descripcion, "Pendiente")
+            exito, mensaje = self.db.crear_orden(vehiculo_id, descripcion, "Ingresado")
             if exito:
-                accion = "INSERT" if id_orden is None else "UPDATE"
-                desc = f"{accion} en ordenes: {descripcion[:50]}..."
                 self.db.registrar_log(
-                    usuario_id=1,
-                    usuario_nombre="admin",
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
                     tabla="ordenes",
-                    registro_id=id_orden or 0,
-                    accion=accion,
-                    descripcion=desc
+                    registro_id=0,  # No tenemos el ID, pero se puede obtener después
+                    accion="INSERT",
+                    descripcion=f"Nueva orden: {descripcion[:50]}..."
                 )
                 messagebox.showinfo("Éxito", "Orden creada correctamente", parent=ventana)
                 ventana.destroy()
@@ -190,7 +202,7 @@ class GestionServicios:
         tk.Label(ventana, text="Seleccione nuevo estado:", bg="white").pack(pady=5)
         combo_estado = ttk.Combobox(ventana, values=estados, width=20, state="readonly")
         combo_estado.pack(pady=5)
-        combo_estado.set(estado_actual)  
+        combo_estado.set(estado_actual)
 
         def actualizar():
             nuevo_estado = combo_estado.get()
@@ -205,18 +217,16 @@ class GestionServicios:
             exito, mensaje = self.db.actualizar_estado_orden(id_orden, nuevo_estado)
             if exito:
                 self.db.registrar_log(
-                    usuario_id=1,
-                    usuario_nombre="admin",
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
                     tabla="ordenes",
                     registro_id=id_orden,
                     accion="UPDATE",
                     descripcion=f"Estado cambiado de '{estado_actual}' a '{nuevo_estado}'"
                 )
                 messagebox.showinfo("Éxito", f"Estado actualizado a '{nuevo_estado}'", parent=ventana)
-                ventana.destroy()  
-                
+                ventana.destroy()
                 self.cargar_datos()
-                
                 self.frame.update_idletasks()
                 self.frame.update()
             else:
@@ -224,7 +234,7 @@ class GestionServicios:
 
         btn_guardar = tk.Button(ventana, text="Actualizar", bg="#27ae60", fg="white", command=actualizar)
         btn_guardar.pack(pady=10)
-        
+
     def eliminar_orden(self):
         id_orden = self.obtener_seleccionado()
         if not id_orden:
@@ -233,8 +243,8 @@ class GestionServicios:
             exito, mensaje = self.db.eliminar_orden(id_orden)
             if exito:
                 self.db.registrar_log(
-                    usuario_id=1,
-                    usuario_nombre="admin",
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
                     tabla="ordenes",
                     registro_id=id_orden,
                     accion="DELETE",
