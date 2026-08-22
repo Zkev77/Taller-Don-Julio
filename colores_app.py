@@ -1,0 +1,13 @@
+FONDO_PRINCIPAL = "#1a1a1a"      
+FONDO_TARJETA = "#242424"          
+FONDO_SIDEBAR = "#1e1e1e"        
+COLOR_ACENTO = "#e74c3c"       
+COLOR_ACENTO_OSCURO = "#c0392b"    
+TEXTO_BLANCO = "#ffffff"
+TEXTO_GRIS = "#a0a0a0"             
+SEPARADOR = "#333333"     
+
+COLOR_VERDE = "#27ae60"          
+COLOR_AZUL = "#3498db"            
+COLOR_AMARILLO = "#f39c12"        
+COLOR_MORADO = "#9b59b6"  
