@@ -94,9 +94,10 @@ class Database:
 
     def agregar_cliente(self, cedula, nombre, telefono, email):
         if self.fetch_all("SELECT id FROM clientes WHERE cedula = %s", (cedula,)):
-            return False, "La cédula ya existe", None
+            return False, "La cédula ya existe"
         query = "INSERT INTO clientes (cedula, nombre, telefono, email) VALUES (%s, %s, %s, %s)"
-        return self.execute_query(query, (cedula, nombre, telefono, email))
+        exito, mensaje, _ = self.execute_query(query, (cedula, nombre, telefono, email))
+        return exito, mensaje
 
     def actualizar_cliente(self, id_cliente, cedula, nombre, telefono, email):
         duplicado = self.fetch_all("SELECT id FROM clientes WHERE cedula = %s AND id != %s", (cedula, id_cliente))
@@ -107,7 +108,7 @@ class Database:
         query = "UPDATE clientes SET cedula=%s, nombre=%s, telefono=%s, email=%s WHERE id=%s"
         exito, mensaje, _ = self.execute_query(query, (cedula, nombre, telefono, email, id_cliente))
         return exito, mensaje
-    
+
     def existe_telefono(self, telefono, id_cliente=None):
         if id_cliente:
             query = "SELECT id FROM clientes WHERE telefono = %s AND id != %s"
@@ -140,25 +141,27 @@ class Database:
 
     def agregar_vehiculo(self, placa, marca, modelo, cliente_id):
         if self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s", (placa,)):
-            return False, "La placa ya existe", None
+            return False, "La placa ya existe"
         query = "INSERT INTO vehiculos (placa, marca, modelo, cliente_id) VALUES (%s, %s, %s, %s)"
-        return self.execute_query(query, (placa.upper(), marca, modelo, cliente_id))
+        exito, mensaje, _ = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id))
+        return exito, mensaje
 
     def actualizar_vehiculo(self, id_vehiculo, placa, marca, modelo, cliente_id):
         duplicado = self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s AND id != %s", (placa, id_vehiculo))
         if duplicado:
             return False, "La placa ya está en uso por otro vehículo"
         query = "UPDATE vehiculos SET placa=%s, marca=%s, modelo=%s, cliente_id=%s WHERE id=%s"
-        return self.execute_query(query, (placa.upper(), marca, modelo, cliente_id, id_vehiculo))
-
-    def eliminar_vehiculo(self, id_vehiculo):
-        query = "DELETE FROM vehiculos WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (id_vehiculo,))
+        exito, mensaje, _ = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id, id_vehiculo))
         return exito, mensaje
 
     def obtener_vehiculo_por_id(self, id_vehiculo):
         res = self.fetch_all("SELECT id, placa, marca, modelo, cliente_id FROM vehiculos WHERE id=%s", (id_vehiculo,))
         return res[0] if res else None
+
+    def eliminar_vehiculo(self, id_vehiculo):
+        query = "DELETE FROM vehiculos WHERE id=%s"
+        exito, mensaje, _ = self.execute_query(query, (id_vehiculo,))
+        return exito, mensaje
 
     def listar_ordenes_completas(self):
         query = """
@@ -216,11 +219,13 @@ class Database:
 
     def agregar_repuesto(self, nombre, descripcion, precio, stock, proveedor=""):
         query = "INSERT INTO repuestos (nombre, descripcion, precio, stock, proveedor) VALUES (%s, %s, %s, %s, %s)"
-        return self.execute_query(query, (nombre, descripcion, precio, stock, proveedor))
+        exito, mensaje, _ = self.execute_query(query, (nombre, descripcion, precio, stock, proveedor))
+        return exito, mensaje
 
     def actualizar_repuesto(self, id_repuesto, nombre, descripcion, precio, stock, proveedor=""):
         query = "UPDATE repuestos SET nombre=%s, descripcion=%s, precio=%s, stock=%s, proveedor=%s WHERE id=%s"
-        return self.execute_query(query, (nombre, descripcion, precio, stock, proveedor, id_repuesto))
+        exito, mensaje, _ = self.execute_query(query, (nombre, descripcion, precio, stock, proveedor, id_repuesto))
+        return exito, mensaje
 
     def eliminar_repuesto(self, id_repuesto):
         query = "DELETE FROM repuestos WHERE id=%s"
@@ -233,7 +238,8 @@ class Database:
 
     def actualizar_stock(self, id_repuesto, cantidad):
         query = "UPDATE repuestos SET stock = stock - %s WHERE id = %s"
-        return self.execute_query(query, (cantidad, id_repuesto))
+        exito, mensaje, _ = self.execute_query(query, (cantidad, id_repuesto))
+        return exito, mensaje
 
     def listar_repuestos_por_orden(self, id_orden):
         query = """
@@ -242,7 +248,7 @@ class Database:
             JOIN repuestos r ON orp.repuesto_id = r.id
             WHERE orp.orden_id = %s
         """
-        return self.fetch_all(query, (id_orden,))
+        return self.fetch_all(query)
 
     def agregar_repuesto_a_orden(self, orden_id, repuesto_id, cantidad, precio_unitario):
         exito, mensaje, _ = self.execute_query(
@@ -258,7 +264,8 @@ class Database:
             INSERT INTO logs_auditoria (usuario_id, usuario_nombre, tabla_afectada, registro_id, accion, descripcion)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
-        return self.execute_query(query, (usuario_id, usuario_nombre, tabla, registro_id, accion, descripcion))
+        exito, mensaje, _ = self.execute_query(query, (usuario_id, usuario_nombre, tabla, registro_id, accion, descripcion))
+        return exito, mensaje
 
     def listar_logs(self, limite=100):
         query = """
@@ -287,22 +294,17 @@ class Database:
         return self.fetch_all(query)
 
     def obtener_estadisticas_taller(self):
-        """Retorna estadísticas generales del taller"""
         stats = {}
-        
         clientes = self.fetch_all("SELECT COUNT(*) as total FROM clientes")
         stats['total_clientes'] = clientes[0]['total'] if clientes else 0
-        
         vehiculos = self.fetch_all("SELECT COUNT(*) as total FROM vehiculos")
         stats['total_vehiculos'] = vehiculos[0]['total'] if vehiculos else 0
-        
         ordenes_estado = self.fetch_all("""
             SELECT estado, COUNT(*) as total 
             FROM ordenes 
             GROUP BY estado
         """)
         stats['ordenes_por_estado'] = ordenes_estado or []
-        
         ordenes_mes = self.fetch_all("""
             SELECT COUNT(*) as total 
             FROM ordenes 
@@ -310,14 +312,12 @@ class Database:
             AND YEAR(fecha) = YEAR(CURRENT_DATE())
         """)
         stats['ordenes_mes'] = ordenes_mes[0]['total'] if ordenes_mes else 0
-        
         repuestos_bajo_stock = self.fetch_all("""
             SELECT COUNT(*) as total 
             FROM repuestos 
             WHERE stock < 5
         """)
         stats['repuestos_bajo_stock'] = repuestos_bajo_stock[0]['total'] if repuestos_bajo_stock else 0
-        
         return stats
 
     def obtener_id_usuario(self, username):

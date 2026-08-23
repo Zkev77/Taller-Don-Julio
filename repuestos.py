@@ -1,5 +1,5 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, Toplevel
+import customtkinter as ctk
+from tkinter import ttk, messagebox
 from database import Database
 from colores_app import *
 
@@ -9,46 +9,70 @@ class GestionRepuestos:
         self.rol = rol
         self.usuario_actual = usuario_actual
         self.db = Database()
-        self.frame = tk.Frame(parent, bg=FONDO_TARJETA)
+        self.frame = ctk.CTkFrame(parent, fg_color=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.toolbar = tk.Frame(self.frame, bg=FONDO_TARJETA)
+        self.toolbar = ctk.CTkFrame(self.frame, fg_color=FONDO_TARJETA)
         self.toolbar.pack(fill="x", pady=5)
 
-        self.btn_agregar = tk.Button(self.toolbar, text="+ Agregar Repuesto", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
-                                     command=self.abrir_formulario_agregar)
-        if self.rol != 'admin':
-            self.btn_agregar.config(state="disabled")
+        self.btn_agregar = ctk.CTkButton(
+            self.toolbar, text="+ Agregar Repuesto",
+            fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
+            command=self.abrir_formulario_agregar
+        )
+        if self.rol not in ['admin', 'secretaria']:
+            self.btn_agregar.configure(state="disabled")
         self.btn_agregar.pack(side="left", padx=5)
 
-        self.btn_editar = tk.Button(self.toolbar, text="✏ Editar", bg=COLOR_AZUL, fg=TEXTO_BLANCO,
-                                    command=self.abrir_formulario_editar)
+        self.btn_editar = ctk.CTkButton(
+            self.toolbar, text="✏ Editar",
+            fg_color=COLOR_AZUL, text_color=TEXTO_BLANCO,
+            command=self.abrir_formulario_editar
+        )
         self.btn_editar.pack(side="left", padx=5)
 
-        self.btn_eliminar = tk.Button(self.toolbar, text="🗑 Eliminar", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
-                                      command=self.eliminar_repuesto)
+        self.btn_eliminar = ctk.CTkButton(
+            self.toolbar, text="🗑 Eliminar",
+            fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
+            command=self.eliminar_repuesto
+        )
         self.btn_eliminar.pack(side="left", padx=5)
 
-        self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg=FONDO_SIDEBAR, fg=TEXTO_BLANCO,
-                                       command=self.cargar_datos)
+        self.btn_refrescar = ctk.CTkButton(
+            self.toolbar, text="⟳ Refrescar",
+            fg_color=FONDO_SIDEBAR, text_color=TEXTO_BLANCO,
+            command=self.cargar_datos
+        )
         self.btn_refrescar.pack(side="left", padx=5)
 
         self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
 
         if self.rol == 'auditor':
-            self.btn_agregar.config(state="disabled")
-            self.btn_editar.config(state="disabled")
-            self.btn_eliminar.config(state="disabled")
+            self.btn_agregar.configure(state="disabled")
+            self.btn_editar.configure(state="disabled")
+            self.btn_eliminar.configure(state="disabled")
         elif self.rol == 'mecanico':
             self.toolbar.pack_forget()
-            tk.Label(self.frame, text="⛔ Acceso denegado para mecánicos",
-                     font=("Arial", 12), fg=TEXTO_GRIS, bg=FONDO_TARJETA).pack(pady=20)
+            ctk.CTkLabel(
+                self.frame,
+                text="⛔ Acceso denegado para mecánicos",
+                font=("Inter", 12),
+                text_color=TEXTO_GRIS
+            ).pack(pady=20)
             return
         elif self.rol in ['admin', 'secretaria']:
             pass
 
-        self.tree = ttk.Treeview(self.frame, columns=("ID", "Nombre", "Descripción", "Precio", "Stock", "Proveedor"),
-                                 show="headings")
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Treeview", background=FONDO_TARJETA, foreground=TEXTO_BLANCO, fieldbackground=FONDO_TARJETA)
+        style.map("Treeview", background=[('selected', COLOR_ACENTO)])
+
+        self.tree = ttk.Treeview(
+            self.frame,
+            columns=("ID", "Nombre", "Descripción", "Precio", "Stock", "Proveedor"),
+            show="headings"
+        )
         self.tree.heading("ID", text="ID")
         self.tree.heading("Nombre", text="Nombre")
         self.tree.heading("Descripción", text="Descripción")
@@ -101,13 +125,17 @@ class GestionRepuestos:
             datos = self.db.obtener_repuesto_por_id(id_repuesto)
             if datos:
                 self._formulario_repuesto(id_repuesto, datos)
+            else:
+                messagebox.showerror("Error", "No se encontraron datos del repuesto", parent=self.frame)
 
     def _formulario_repuesto(self, id_repuesto=None, datos=None):
-        ventana = Toplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.parent)
         ventana.title("Nuevo Repuesto" if id_repuesto is None else "Editar Repuesto")
         ventana.geometry("450x400")
         ventana.resizable(False, False)
-        ventana.configure(bg=FONDO_TARJETA)
+
+        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
         def solo_letras_numeros_espacios(caracter, texto_actual, max_len):
             if caracter == '':
@@ -135,25 +163,25 @@ class GestionRepuestos:
         vcmd_stock = ventana.register(lambda c, t: solo_digitos(c, t, 6))
         vcmd_proveedor = ventana.register(lambda c, t: solo_letras_numeros_espacios(c, t, 100))
 
-        tk.Label(ventana, text="Nombre *:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
-        entry_nombre = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_nombre, '%S', '%P'))
+        ctk.CTkLabel(frame, text="Nombre *:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        entry_nombre = ctk.CTkEntry(frame, width=250, validate="key", validatecommand=(vcmd_nombre, '%S', '%P'))
         entry_nombre.grid(row=0, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Descripción:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="ne")
-        txt_descripcion = tk.Text(ventana, width=30, height=4, bg=FONDO_TARJETA, fg=TEXTO_BLANCO)
+        ctk.CTkLabel(frame, text="Descripción:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="ne")
+        txt_descripcion = ctk.CTkTextbox(frame, width=250, height=80)
         txt_descripcion.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Precio *:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
-        entry_precio = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_precio, '%S', '%P'))
+        ctk.CTkLabel(frame, text="Precio *:", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        entry_precio = ctk.CTkEntry(frame, width=250, validate="key", validatecommand=(vcmd_precio, '%S', '%P'))
         entry_precio.grid(row=2, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Stock:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=3, column=0, padx=10, pady=10, sticky="e")
-        entry_stock = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_stock, '%S', '%P'))
+        ctk.CTkLabel(frame, text="Stock:", text_color=TEXTO_BLANCO).grid(row=3, column=0, padx=10, pady=10, sticky="e")
+        entry_stock = ctk.CTkEntry(frame, width=250, validate="key", validatecommand=(vcmd_stock, '%S', '%P'))
         entry_stock.grid(row=3, column=1, padx=10, pady=10, sticky="w")
         entry_stock.insert(0, "0")
 
-        tk.Label(ventana, text="Proveedor:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=4, column=0, padx=10, pady=10, sticky="e")
-        entry_proveedor = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_proveedor, '%S', '%P'))
+        ctk.CTkLabel(frame, text="Proveedor:", text_color=TEXTO_BLANCO).grid(row=4, column=0, padx=10, pady=10, sticky="e")
+        entry_proveedor = ctk.CTkEntry(frame, width=250, validate="key", validatecommand=(vcmd_proveedor, '%S', '%P'))
         entry_proveedor.grid(row=4, column=1, padx=10, pady=10, sticky="w")
 
         if datos:
@@ -165,7 +193,7 @@ class GestionRepuestos:
 
         def guardar():
             nombre = entry_nombre.get().strip()
-            descripcion = txt_descripcion.get("1.0", tk.END).strip()
+            descripcion = txt_descripcion.get("1.0", ctk.END).strip()
             precio = entry_precio.get().strip()
             stock = entry_stock.get().strip()
             proveedor = entry_proveedor.get().strip()
@@ -205,13 +233,15 @@ class GestionRepuestos:
                     accion=accion,
                     descripcion=desc
                 )
-                messagebox.showinfo("Éxito", mensaje, parent=ventana)
+                messagebox.showinfo("Éxito", mensaje)
                 ventana.destroy()
                 self.cargar_datos()
+                self.tree.update_idletasks()
+                self.tree.update()
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = tk.Button(ventana, text="Guardar", bg=COLOR_VERDE, fg=TEXTO_BLANCO, command=guardar)
+        btn_guardar = ctk.CTkButton(frame, text="Guardar", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=guardar)
         btn_guardar.grid(row=5, column=0, columnspan=2, pady=20)
 
     def eliminar_repuesto(self):

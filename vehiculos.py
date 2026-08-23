@@ -1,5 +1,5 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, Toplevel
+import customtkinter as ctk
+from tkinter import ttk, messagebox
 from database import Database
 import os
 import sys
@@ -12,49 +12,72 @@ class GestionVehiculos:
         self.rol = rol
         self.usuario_actual = usuario_actual
         self.db = Database()
-        self.frame = tk.Frame(parent, bg=FONDO_TARJETA)
+        self.frame = ctk.CTkFrame(parent, fg_color=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.toolbar = tk.Frame(self.frame, bg=FONDO_TARJETA)
+        self.toolbar = ctk.CTkFrame(self.frame, fg_color=FONDO_TARJETA)
         self.toolbar.pack(fill="x", pady=5)
 
-        self.btn_agregar = tk.Button(self.toolbar, text="+ Agregar Vehículo", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
-                                     command=self.abrir_formulario_agregar)
-        if self.rol != 'admin':
-            self.btn_agregar.config(state="disabled")
+        self.btn_agregar = ctk.CTkButton(
+            self.toolbar, text="+ Agregar Vehículo",
+            fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
+            command=self.abrir_formulario_agregar
+        )
+        if self.rol not in ['admin', 'secretaria']:
+            self.btn_agregar.configure(state="disabled")
         self.btn_agregar.pack(side="left", padx=5)
 
-        self.btn_editar = tk.Button(self.toolbar, text="✏ Editar", bg=COLOR_AZUL, fg=TEXTO_BLANCO,
-                                    command=self.abrir_formulario_editar)
+        self.btn_editar = ctk.CTkButton(
+            self.toolbar, text="✏ Editar",
+            fg_color=COLOR_AZUL, text_color=TEXTO_BLANCO,
+            command=self.abrir_formulario_editar
+        )
         self.btn_editar.pack(side="left", padx=5)
 
-        self.btn_eliminar = tk.Button(self.toolbar, text="🗑 Eliminar", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
-                                      command=self.eliminar_vehiculo)
+        self.btn_eliminar = ctk.CTkButton(
+            self.toolbar, text="🗑 Eliminar",
+            fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
+            command=self.eliminar_vehiculo
+        )
         self.btn_eliminar.pack(side="left", padx=5)
 
-        self.btn_exportar = tk.Button(self.toolbar, text="📄 Exportar PDF", bg=COLOR_MORADO, fg=TEXTO_BLANCO,
-                                      command=self.exportar_pdf)
+        self.btn_exportar = ctk.CTkButton(
+            self.toolbar, text="📄 Exportar PDF",
+            fg_color=COLOR_MORADO, text_color=TEXTO_BLANCO,
+            command=self.exportar_pdf
+        )
         self.btn_exportar.pack(side="left", padx=5)
 
-        self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg=FONDO_SIDEBAR, fg=TEXTO_BLANCO,
-                                       command=self.cargar_datos)
+        self.btn_refrescar = ctk.CTkButton(
+            self.toolbar, text="⟳ Refrescar",
+            fg_color=FONDO_SIDEBAR, text_color=TEXTO_BLANCO,
+            command=self.cargar_datos
+        )
         self.btn_refrescar.pack(side="left", padx=5)
 
         self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
 
         if self.rol == 'auditor':
-            self.btn_agregar.config(state="disabled")
-            self.btn_editar.config(state="disabled")
-            self.btn_eliminar.config(state="disabled")
+            self.btn_agregar.configure(state="disabled")
+            self.btn_editar.configure(state="disabled")
+            self.btn_eliminar.configure(state="disabled")
         elif self.rol == 'mecanico':
-            self.btn_agregar.config(state="disabled")
-            self.btn_editar.config(state="disabled")
-            self.btn_eliminar.config(state="disabled")
+            self.btn_agregar.configure(state="disabled")
+            self.btn_editar.configure(state="disabled")
+            self.btn_eliminar.configure(state="disabled")
         elif self.rol in ['admin', 'secretaria']:
             pass
 
-        self.tree = ttk.Treeview(self.frame, columns=("ID", "Placa", "Marca", "Modelo", "Cliente"),
-                                 show="headings")
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Treeview", background=FONDO_TARJETA, foreground=TEXTO_BLANCO, fieldbackground=FONDO_TARJETA)
+        style.map("Treeview", background=[('selected', COLOR_ACENTO)])
+
+        self.tree = ttk.Treeview(
+            self.frame,
+            columns=("ID", "Placa", "Marca", "Modelo", "Cliente"),
+            show="headings"
+        )
         self.tree.heading("ID", text="ID")
         self.tree.heading("Placa", text="Placa")
         self.tree.heading("Marca", text="Marca")
@@ -100,11 +123,13 @@ class GestionVehiculos:
                 self._formulario_vehiculo(id_vehiculo, datos)
 
     def _formulario_vehiculo(self, id_vehiculo=None, datos=None):
-        ventana = Toplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.parent)
         ventana.title("Nuevo Vehículo" if id_vehiculo is None else "Editar Vehículo")
         ventana.geometry("450x350")
         ventana.resizable(False, False)
-        ventana.configure(bg=FONDO_TARJETA)
+
+        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
         def validar_longitud_y_caracter(caracter, texto_actual, max_len, alfanumerico=True):
             if caracter == '':
@@ -117,7 +142,7 @@ class GestionVehiculos:
                     return False
             return len(texto_actual) < max_len
 
-        vcmd_placa = ventana.register(lambda c, t: validar_longitud_y_caracter(c, t, 10, True))
+        vcmd_placa = ventana.register(lambda c, t: validar_longitud_y_caracter(c, t, 8, True))
         vcmd_marca = ventana.register(lambda c, t: validar_longitud_y_caracter(c, t, 30, False))
         vcmd_modelo = ventana.register(lambda c, t: validar_longitud_y_caracter(c, t, 30, False))
 
@@ -125,21 +150,21 @@ class GestionVehiculos:
         cliente_map = {c['nombre']: c['id'] for c in clientes}
         nombres_clientes = list(cliente_map.keys())
 
-        tk.Label(ventana, text="Placa *:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
-        entry_placa = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_placa, '%S', '%P'))
-        entry_placa.grid(row=0, column=1, padx=10, pady=10)
+        ctk.CTkLabel(frame, text="Placa *:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        entry_placa = ctk.CTkEntry(frame, width=250, validate="key", validatecommand=(vcmd_placa, '%S', '%P'))
+        entry_placa.grid(row=0, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Marca:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="e")
-        entry_marca = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_marca, '%S', '%P'))
-        entry_marca.grid(row=1, column=1, padx=10, pady=10)
+        ctk.CTkLabel(frame, text="Marca:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        entry_marca = ctk.CTkEntry(frame, width=250, validate="key", validatecommand=(vcmd_marca, '%S', '%P'))
+        entry_marca.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Modelo:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
-        entry_modelo = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_modelo, '%S', '%P'))
-        entry_modelo.grid(row=2, column=1, padx=10, pady=10)
+        ctk.CTkLabel(frame, text="Modelo:", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        entry_modelo = ctk.CTkEntry(frame, width=250, validate="key", validatecommand=(vcmd_modelo, '%S', '%P'))
+        entry_modelo.grid(row=2, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Propietario *:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=3, column=0, padx=10, pady=10, sticky="e")
-        combo_cliente = ttk.Combobox(ventana, values=nombres_clientes, width=27)
-        combo_cliente.grid(row=3, column=1, padx=10, pady=10)
+        ctk.CTkLabel(frame, text="Propietario *:", text_color=TEXTO_BLANCO).grid(row=3, column=0, padx=10, pady=10, sticky="e")
+        combo_cliente = ctk.CTkComboBox(frame, values=nombres_clientes, width=220, state="readonly")
+        combo_cliente.grid(row=3, column=1, padx=10, pady=10, sticky="w")
 
         if datos:
             entry_placa.insert(0, datos['placa'])
@@ -189,18 +214,18 @@ class GestionVehiculos:
                     accion=accion,
                     descripcion=desc
                 )
-                messagebox.showinfo("Éxito", mensaje, parent=ventana)
+                messagebox.showinfo("Éxito", mensaje)
                 ventana.destroy()
                 self.cargar_datos()
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = tk.Button(ventana, text="Guardar", bg=COLOR_VERDE, fg=TEXTO_BLANCO, command=guardar)
+        btn_guardar = ctk.CTkButton(frame, text="Guardar", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=guardar)
         btn_guardar.grid(row=4, column=0, columnspan=2, pady=20)
 
         def convertir_mayusculas(event):
             contenido = entry_placa.get().upper()
-            entry_placa.delete(0, tk.END)
+            entry_placa.delete(0, ctk.END)
             entry_placa.insert(0, contenido)
 
         entry_placa.bind("<KeyRelease>", convertir_mayusculas)

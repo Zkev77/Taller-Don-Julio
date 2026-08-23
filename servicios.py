@@ -1,6 +1,7 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, Toplevel, scrolledtext
+import customtkinter as ctk
+from tkinter import ttk, messagebox
 from database import Database
+from colores_app import *
 
 class GestionServicios:
     def __init__(self, parent, rol, usuario_actual):
@@ -9,46 +10,67 @@ class GestionServicios:
         self.usuario_actual = usuario_actual
         self.db = Database()
         self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
-        self.frame = tk.Frame(parent, bg="white")
+
+        self.frame = ctk.CTkFrame(parent, fg_color=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.toolbar = tk.Frame(self.frame, bg="white")
+        self.toolbar = ctk.CTkFrame(self.frame, fg_color=FONDO_TARJETA)
         self.toolbar.pack(fill="x", pady=5)
 
-        self.btn_nuevo = tk.Button(self.toolbar, text="+ Nueva Orden", bg="#e67e22", fg="white",
-                                   command=self.abrir_formulario_nueva_orden)
+        self.btn_nuevo = ctk.CTkButton(
+            self.toolbar, text="+ Nueva Orden",
+            fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
+            command=self.abrir_formulario_nueva_orden
+        )
         self.btn_nuevo.pack(side="left", padx=5)
 
-        self.btn_ver_detalle = tk.Button(self.toolbar, text="📋 Ver Detalle", bg="#3498db", fg="white",
-                                         command=self.abrir_detalle_orden)
+        self.btn_ver_detalle = ctk.CTkButton(
+            self.toolbar, text="📋 Ver Detalle",
+            fg_color=COLOR_AZUL, text_color=TEXTO_BLANCO,
+            command=self.abrir_detalle_orden
+        )
         self.btn_ver_detalle.pack(side="left", padx=5)
 
-        self.btn_cambiar_estado = tk.Button(self.toolbar, text="🔄 Cambiar Estado", bg="#2ecc71", fg="white",
-                                            command=self.cambiar_estado)
+        self.btn_cambiar_estado = ctk.CTkButton(
+            self.toolbar, text="🔄 Cambiar Estado",
+            fg_color=COLOR_AMARILLO, text_color=TEXTO_BLANCO,
+            command=self.cambiar_estado
+        )
         self.btn_cambiar_estado.pack(side="left", padx=5)
 
-        self.btn_eliminar = tk.Button(self.toolbar, text="🗑 Eliminar", bg="#e74c3c", fg="white",
-                                      command=self.eliminar_orden)
+        self.btn_eliminar = ctk.CTkButton(
+            self.toolbar, text="🗑 Eliminar",
+            fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
+            command=self.eliminar_orden
+        )
         self.btn_eliminar.pack(side="left", padx=5)
 
-        self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg="#2c3e50", fg="white",
-                                       command=self.cargar_datos)
+        self.btn_refrescar = ctk.CTkButton(
+            self.toolbar, text="⟳ Refrescar",
+            fg_color=FONDO_SIDEBAR, text_color=TEXTO_BLANCO,
+            command=self.cargar_datos
+        )
         self.btn_refrescar.pack(side="left", padx=5)
 
-        # ========== PERMISOS SEGÚN ROL ==========
         if self.rol == 'auditor':
-            self.btn_nuevo.config(state="disabled")
-            self.btn_cambiar_estado.config(state="disabled")
-            self.btn_eliminar.config(state="disabled")
+            self.btn_nuevo.configure(state="disabled")
+            self.btn_cambiar_estado.configure(state="disabled")
+            self.btn_eliminar.configure(state="disabled")
         elif self.rol == 'mecanico':
-            self.btn_eliminar.config(state="disabled")  # No puede eliminar
-            # Puede crear y cambiar estado
+            self.btn_eliminar.configure(state="disabled")
         elif self.rol in ['admin', 'secretaria']:
-            pass  # CRUD completo
+            pass
 
-        # Treeview
-        self.tree = ttk.Treeview(self.frame, columns=("ID", "Fecha", "Vehículo", "Cliente", "Descripción", "Estado"),
-                                 show="headings")
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Treeview", background=FONDO_TARJETA, foreground=TEXTO_BLANCO, fieldbackground=FONDO_TARJETA)
+        style.map("Treeview", background=[('selected', COLOR_ACENTO)])
+
+        self.tree = ttk.Treeview(
+            self.frame,
+            columns=("ID", "Fecha", "Vehículo", "Cliente", "Descripción", "Estado"),
+            show="headings"
+        )
         self.tree.heading("ID", text="ID")
         self.tree.heading("Fecha", text="Fecha")
         self.tree.heading("Vehículo", text="Vehículo")
@@ -92,14 +114,16 @@ class GestionServicios:
             messagebox.showwarning("Seleccionar", "Seleccione una orden primero")
             return None
         item = self.tree.item(seleccion)
-        return item['values'][0]  # ID
+        return item['values'][0]
 
     def abrir_formulario_nueva_orden(self):
-        ventana = Toplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.parent)
         ventana.title("Nueva Orden de Servicio")
         ventana.geometry("600x400")
         ventana.resizable(False, False)
-        ventana.configure(bg="white")
+
+        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
         vehiculos = self.db.listar_vehiculos_con_cliente()
         if not vehiculos:
@@ -110,17 +134,17 @@ class GestionServicios:
         vehiculos_map = {f"{v['cliente_nombre']} - {v['placa']} ({v['marca']} {v['modelo']})": v['id'] for v in vehiculos}
         nombres_vehiculos = list(vehiculos_map.keys())
 
-        tk.Label(ventana, text="Vehículo *:", bg="white").grid(row=0, column=0, padx=10, pady=10, sticky="e")
-        combo_vehiculo = ttk.Combobox(ventana, values=nombres_vehiculos, width=40)
+        ctk.CTkLabel(frame, text="Vehículo *:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        combo_vehiculo = ctk.CTkComboBox(frame, values=nombres_vehiculos, width=350, state="readonly")
         combo_vehiculo.grid(row=0, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Descripción de la falla:", bg="white").grid(row=1, column=0, padx=10, pady=10, sticky="ne")
-        txt_descripcion = scrolledtext.ScrolledText(ventana, width=40, height=8)
-        txt_descripcion.grid(row=1, column=1, padx=10, pady=10)
+        ctk.CTkLabel(frame, text="Descripción de la falla:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="ne")
+        txt_descripcion = ctk.CTkTextbox(frame, width=350, height=120)
+        txt_descripcion.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
         def guardar():
             vehiculo_seleccionado = combo_vehiculo.get()
-            descripcion = txt_descripcion.get("1.0", tk.END).strip()
+            descripcion = txt_descripcion.get("1.0", ctk.END).strip()
 
             if not vehiculo_seleccionado:
                 messagebox.showerror("Error", "Seleccione un vehículo", parent=ventana)
@@ -140,17 +164,19 @@ class GestionServicios:
                     usuario_id=self.usuario_id,
                     usuario_nombre=self.usuario_actual,
                     tabla="ordenes",
-                    registro_id=0,  # No tenemos el ID, pero se puede obtener después
+                    registro_id=0,
                     accion="INSERT",
                     descripcion=f"Nueva orden: {descripcion[:50]}..."
                 )
-                messagebox.showinfo("Éxito", "Orden creada correctamente", parent=ventana)
+                messagebox.showinfo("Éxito", "Orden creada correctamente")
                 ventana.destroy()
                 self.cargar_datos()
+                self.tree.update_idletasks()
+                self.tree.update()
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = tk.Button(ventana, text="Crear Orden", bg="#27ae60", fg="white", command=guardar)
+        btn_guardar = ctk.CTkButton(frame, text="Crear Orden", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=guardar)
         btn_guardar.grid(row=2, column=0, columnspan=2, pady=20)
 
     def abrir_detalle_orden(self):
@@ -162,20 +188,22 @@ class GestionServicios:
             messagebox.showerror("Error", "No se encontró la orden")
             return
 
-        ventana = Toplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.parent)
         ventana.title(f"Detalle de Orden #{id_orden}")
         ventana.geometry("600x400")
-        ventana.configure(bg="white")
 
-        tk.Label(ventana, text=f"ID: {datos['id']}", bg="white", font=("Arial", 12)).pack(anchor="w", padx=10, pady=5)
-        tk.Label(ventana, text=f"Fecha: {datos['fecha']}", bg="white", font=("Arial", 12)).pack(anchor="w", padx=10, pady=5)
-        tk.Label(ventana, text=f"Vehículo: {datos['marca']} {datos['modelo']} ({datos['placa']})", bg="white", font=("Arial", 12)).pack(anchor="w", padx=10, pady=5)
-        tk.Label(ventana, text=f"Cliente: {datos['cliente_nombre']}", bg="white", font=("Arial", 12)).pack(anchor="w", padx=10, pady=5)
-        tk.Label(ventana, text=f"Estado: {datos['estado']}", bg="white", font=("Arial", 12, "bold"), fg="#e67e22").pack(anchor="w", padx=10, pady=5)
-        tk.Label(ventana, text="Descripción:", bg="white", font=("Arial", 12)).pack(anchor="w", padx=10, pady=5)
-        tk.Label(ventana, text=datos['descripcion'], bg="white", wraplength=500, justify="left").pack(anchor="w", padx=10, pady=5)
+        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        btn_cerrar = tk.Button(ventana, text="Cerrar", bg="#e74c3c", fg="white", command=ventana.destroy)
+        ctk.CTkLabel(frame, text=f"ID: {datos['id']}", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
+        ctk.CTkLabel(frame, text=f"Fecha: {datos['fecha']}", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
+        ctk.CTkLabel(frame, text=f"Vehículo: {datos['marca']} {datos['modelo']} ({datos['placa']})", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
+        ctk.CTkLabel(frame, text=f"Cliente: {datos['cliente_nombre']}", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
+        ctk.CTkLabel(frame, text=f"Estado: {datos['estado']}", text_color=COLOR_ACENTO, font=("Inter", 12, "bold")).pack(anchor="w", padx=10, pady=5)
+        ctk.CTkLabel(frame, text="Descripción:", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
+        ctk.CTkLabel(frame, text=datos['descripcion'], text_color=TEXTO_GRIS, wraplength=500, justify="left").pack(anchor="w", padx=10, pady=5)
+
+        btn_cerrar = ctk.CTkButton(frame, text="Cerrar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO, command=ventana.destroy)
         btn_cerrar.pack(pady=10)
 
     def cambiar_estado(self):
@@ -191,16 +219,19 @@ class GestionServicios:
         estado_actual = datos['estado']
         estados = ['Ingresado', 'Revisión', 'Trabajando', 'Completado', 'Entregado']
 
-        ventana = Toplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.parent)
         ventana.title("Cambiar Estado")
-        ventana.geometry("300x200")
-        ventana.configure(bg="white")
+        ventana.geometry("300x250")
+        ventana.resizable(False, False)
 
-        tk.Label(ventana, text="Estado actual:", bg="white", font=("Arial", 10)).pack(pady=5)
-        tk.Label(ventana, text=f"🔹 {estado_actual}", bg="white", font=("Arial", 10, "bold"), fg="#e67e22").pack(pady=5)
+        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        tk.Label(ventana, text="Seleccione nuevo estado:", bg="white").pack(pady=5)
-        combo_estado = ttk.Combobox(ventana, values=estados, width=20, state="readonly")
+        ctk.CTkLabel(frame, text="Estado actual:", text_color=TEXTO_BLANCO, font=("Inter", 10)).pack(pady=5)
+        ctk.CTkLabel(frame, text=f"🔹 {estado_actual}", text_color=COLOR_ACENTO, font=("Inter", 10, "bold")).pack(pady=5)
+
+        ctk.CTkLabel(frame, text="Seleccione nuevo estado:", text_color=TEXTO_BLANCO).pack(pady=5)
+        combo_estado = ctk.CTkComboBox(frame, values=estados, width=200, state="readonly")
         combo_estado.pack(pady=5)
         combo_estado.set(estado_actual)
 
@@ -224,15 +255,23 @@ class GestionServicios:
                     accion="UPDATE",
                     descripcion=f"Estado cambiado de '{estado_actual}' a '{nuevo_estado}'"
                 )
-                messagebox.showinfo("Éxito", f"Estado actualizado a '{nuevo_estado}'", parent=ventana)
+                messagebox.showinfo("Éxito", f"Estado actualizado a '{nuevo_estado}'")
                 ventana.destroy()
                 self.cargar_datos()
-                self.frame.update_idletasks()
-                self.frame.update()
+                self.tree.update_idletasks()
+                self.tree.update()
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = tk.Button(ventana, text="Actualizar", bg="#27ae60", fg="white", command=actualizar)
+        combo_estado.bind("<Key-Return>", lambda e: actualizar())
+
+        btn_guardar = ctk.CTkButton(
+            frame,
+            text="Guardar",
+            fg_color=COLOR_VERDE,
+            text_color=TEXTO_BLANCO,
+            command=actualizar
+        )
         btn_guardar.pack(pady=10)
 
     def eliminar_orden(self):
@@ -252,3 +291,5 @@ class GestionServicios:
                 )
                 messagebox.showinfo("Éxito", "Orden eliminada", parent=self.frame)
                 self.cargar_datos()
+                self.tree.update_idletasks()
+                self.tree.update()
