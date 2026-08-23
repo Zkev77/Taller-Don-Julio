@@ -1,4 +1,3 @@
-# configuracion.py
 import tkinter as tk
 from tkinter import ttk, messagebox, Toplevel
 import customtkinter as ctk
@@ -7,6 +6,7 @@ import hashlib
 import os
 import subprocess
 import datetime
+from colores_app import *
 
 class GestionConfiguracion:
     def __init__(self, parent, rol, usuario_actual):
@@ -14,46 +14,46 @@ class GestionConfiguracion:
         self.rol = rol
         self.usuario_actual = usuario_actual
         self.db = Database()
-        self.frame = ctk.CTkFrame(parent, fg_color="white")
+        self.frame = ctk.CTkFrame(parent, fg_color=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         if self.rol != 'auditor':
             ctk.CTkLabel(self.frame, text="⛔ Acceso denegado\nSolo el Auditor puede gestionar la configuración",
-                         font=("Inter", 14, "bold"), text_color="red").pack(pady=50)
+                         font=("Inter", 14, "bold"), text_color=TEXTO_GRIS).pack(pady=50)
             return
 
         self.notebook = ttk.Notebook(self.frame)
         self.notebook.pack(fill="both", expand=True)
 
-        self.tab_usuarios = ctk.CTkFrame(self.notebook, fg_color="white")
+        self.tab_usuarios = ctk.CTkFrame(self.notebook, fg_color=FONDO_TARJETA)
         self.notebook.add(self.tab_usuarios, text="👤 Usuarios")
         self._crear_pestania_usuarios()
 
-        self.tab_password = ctk.CTkFrame(self.notebook, fg_color="white")
+        self.tab_password = ctk.CTkFrame(self.notebook, fg_color=FONDO_TARJETA)
         self.notebook.add(self.tab_password, text="🔑 Cambiar Contraseña")
         self._crear_pestania_password()
 
-        self.tab_backup = ctk.CTkFrame(self.notebook, fg_color="white")
+        self.tab_backup = ctk.CTkFrame(self.notebook, fg_color=FONDO_TARJETA)
         self.notebook.add(self.tab_backup, text="💾 Respaldos")
         self._crear_pestania_backup()
 
     def _crear_pestania_usuarios(self):
-        toolbar = ctk.CTkFrame(self.tab_usuarios, fg_color="white")
+        toolbar = ctk.CTkFrame(self.tab_usuarios, fg_color=FONDO_TARJETA)
         toolbar.pack(fill="x", pady=5)
 
-        btn_agregar = ctk.CTkButton(toolbar, text="+ Agregar Usuario", fg_color="#e67e22",
+        btn_agregar = ctk.CTkButton(toolbar, text="+ Agregar Usuario", fg_color=COLOR_ACENTO,
                                     command=self._agregar_usuario)
         btn_agregar.pack(side="left", padx=5)
 
-        btn_editar = ctk.CTkButton(toolbar, text="✏ Editar", fg_color="#3498db",
+        btn_editar = ctk.CTkButton(toolbar, text="✏ Editar", fg_color=COLOR_AZUL,
                                    command=self._editar_usuario)
         btn_editar.pack(side="left", padx=5)
 
-        btn_eliminar = ctk.CTkButton(toolbar, text="🗑 Eliminar", fg_color="#e74c3c",
+        btn_eliminar = ctk.CTkButton(toolbar, text="🗑 Eliminar", fg_color=COLOR_ACENTO,
                                      command=self._eliminar_usuario)
         btn_eliminar.pack(side="left", padx=5)
 
-        btn_refrescar = ctk.CTkButton(toolbar, text="⟳ Refrescar", fg_color="#2c3e50",
+        btn_refrescar = ctk.CTkButton(toolbar, text="⟳ Refrescar", fg_color=FONDO_SIDEBAR,
                                       command=self._cargar_usuarios)
         btn_refrescar.pack(side="left", padx=5)
 
@@ -103,18 +103,18 @@ class GestionConfiguracion:
         ventana.geometry("400x350")
         ventana.resizable(False, False)
 
-        frame = ctk.CTkFrame(ventana, fg_color="white")
+        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
         frame.pack(pady=20, padx=20, fill="both", expand=True)
 
-        ctk.CTkLabel(frame, text="Usuario:", text_color="black").grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        ctk.CTkLabel(frame, text="Usuario:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
         entry_username = ctk.CTkEntry(frame, width=250)
         entry_username.grid(row=0, column=1, padx=10, pady=10)
 
-        ctk.CTkLabel(frame, text="Contraseña:", text_color="black").grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        ctk.CTkLabel(frame, text="Contraseña:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="e")
         entry_password = ctk.CTkEntry(frame, width=250, show='*')
         entry_password.grid(row=1, column=1, padx=10, pady=10)
 
-        ctk.CTkLabel(frame, text="Rol:", text_color="black").grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        ctk.CTkLabel(frame, text="Rol:", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
         combo_rol = ctk.CTkComboBox(frame, values=['admin', 'mecanico', 'auditor', 'secretaria'], width=248)
         combo_rol.grid(row=2, column=1, padx=10, pady=10)
         combo_rol.set('mecanico')
@@ -164,7 +164,7 @@ class GestionConfiguracion:
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = ctk.CTkButton(frame, text="Guardar", fg_color="#27ae60", command=guardar)
+        btn_guardar = ctk.CTkButton(frame, text="Guardar", fg_color=COLOR_VERDE, command=guardar)
         btn_guardar.grid(row=3, column=0, columnspan=2, pady=20)
 
     def _eliminar_usuario(self):
@@ -180,16 +180,16 @@ class GestionConfiguracion:
                 messagebox.showerror("Error", mensaje)
 
     def _crear_pestania_password(self):
-        frame = ctk.CTkFrame(self.tab_password, fg_color="white")
+        frame = ctk.CTkFrame(self.tab_password, fg_color=FONDO_TARJETA)
         frame.pack(pady=30)
 
-        ctk.CTkLabel(frame, text="🔐 Cambiar Contraseña", font=("Inter", 16, "bold"), text_color="#2c3e50").pack(pady=10)
-        ctk.CTkLabel(frame, text="Usuario actual:", text_color="black").pack(pady=5)
-        ctk.CTkLabel(frame, text=self.usuario_actual, font=("Inter", 12, "bold"), text_color="#e67e22").pack(pady=5)
-        ctk.CTkLabel(frame, text="Nueva contraseña:", text_color="black").pack(pady=5)
+        ctk.CTkLabel(frame, text="🔐 Cambiar Contraseña", font=("Inter", 16, "bold"), text_color=TEXTO_BLANCO).pack(pady=10)
+        ctk.CTkLabel(frame, text="Usuario actual:", text_color=TEXTO_GRIS).pack(pady=5)
+        ctk.CTkLabel(frame, text=self.usuario_actual, font=("Inter", 12, "bold"), text_color=COLOR_ACENTO).pack(pady=5)
+        ctk.CTkLabel(frame, text="Nueva contraseña:", text_color=TEXTO_GRIS).pack(pady=5)
         entry_nueva = ctk.CTkEntry(frame, width=250, show='*')
         entry_nueva.pack(pady=5)
-        ctk.CTkLabel(frame, text="Confirmar contraseña:", text_color="black").pack(pady=5)
+        ctk.CTkLabel(frame, text="Confirmar contraseña:", text_color=TEXTO_GRIS).pack(pady=5)
         entry_confirmar = ctk.CTkEntry(frame, width=250, show='*')
         entry_confirmar.pack(pady=5)
 
@@ -217,19 +217,19 @@ class GestionConfiguracion:
             else:
                 messagebox.showerror("Error", mensaje)
 
-        btn_guardar = ctk.CTkButton(frame, text="Actualizar Contraseña", fg_color="#27ae60", command=cambiar_password)
+        btn_guardar = ctk.CTkButton(frame, text="Actualizar Contraseña", fg_color=COLOR_VERDE, command=cambiar_password)
         btn_guardar.pack(pady=20)
 
     def _crear_pestania_backup(self):
-        frame = ctk.CTkFrame(self.tab_backup, fg_color="white")
+        frame = ctk.CTkFrame(self.tab_backup, fg_color=FONDO_TARJETA)
         frame.pack(pady=30)
 
-        ctk.CTkLabel(frame, text="💾 Respaldos de Base de Datos", font=("Inter", 16, "bold"), text_color="#2c3e50").pack(pady=10)
+        ctk.CTkLabel(frame, text="💾 Respaldos de Base de Datos", font=("Inter", 16, "bold"), text_color=TEXTO_BLANCO).pack(pady=10)
         info = """
         Esta opción permite exportar un respaldo de la base de datos completa.
         El archivo se guardará en la carpeta del proyecto.
         """
-        ctk.CTkLabel(frame, text=info, text_color="gray", justify="center", font=("Inter", 10)).pack(pady=10)
+        ctk.CTkLabel(frame, text=info, text_color=TEXTO_GRIS, justify="center", font=("Inter", 10)).pack(pady=10)
 
         def exportar_backup():
             fecha = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -251,5 +251,5 @@ class GestionConfiguracion:
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo crear el respaldo:\n{e}")
 
-        btn_backup = ctk.CTkButton(frame, text="📥 Exportar Respaldo", fg_color="#3498db", command=exportar_backup)
+        btn_backup = ctk.CTkButton(frame, text="📥 Exportar Respaldo", fg_color=COLOR_AZUL, command=exportar_backup)
         btn_backup.pack(pady=20)

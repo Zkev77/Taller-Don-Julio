@@ -4,6 +4,7 @@ from database import Database
 import os
 import sys
 import subprocess
+from colores_app import *
 
 class GestionVehiculos:
     def __init__(self, parent, rol, usuario_actual):
@@ -11,31 +12,31 @@ class GestionVehiculos:
         self.rol = rol
         self.usuario_actual = usuario_actual
         self.db = Database()
-        self.frame = tk.Frame(parent, bg="white")
+        self.frame = tk.Frame(parent, bg=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.toolbar = tk.Frame(self.frame, bg="white")
+        self.toolbar = tk.Frame(self.frame, bg=FONDO_TARJETA)
         self.toolbar.pack(fill="x", pady=5)
 
-        self.btn_agregar = tk.Button(self.toolbar, text="+ Agregar Vehículo", bg="#e67e22", fg="white",
+        self.btn_agregar = tk.Button(self.toolbar, text="+ Agregar Vehículo", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
                                      command=self.abrir_formulario_agregar)
         if self.rol != 'admin':
             self.btn_agregar.config(state="disabled")
         self.btn_agregar.pack(side="left", padx=5)
 
-        self.btn_editar = tk.Button(self.toolbar, text="✏ Editar", bg="#3498db", fg="white",
+        self.btn_editar = tk.Button(self.toolbar, text="✏ Editar", bg=COLOR_AZUL, fg=TEXTO_BLANCO,
                                     command=self.abrir_formulario_editar)
         self.btn_editar.pack(side="left", padx=5)
 
-        self.btn_eliminar = tk.Button(self.toolbar, text="🗑 Eliminar", bg="#e74c3c", fg="white",
+        self.btn_eliminar = tk.Button(self.toolbar, text="🗑 Eliminar", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
                                       command=self.eliminar_vehiculo)
         self.btn_eliminar.pack(side="left", padx=5)
 
-        self.btn_exportar = tk.Button(self.toolbar, text="📄 Exportar PDF", bg="#9b59b6", fg="white",
+        self.btn_exportar = tk.Button(self.toolbar, text="📄 Exportar PDF", bg=COLOR_MORADO, fg=TEXTO_BLANCO,
                                       command=self.exportar_pdf)
         self.btn_exportar.pack(side="left", padx=5)
 
-        self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg="#2c3e50", fg="white",
+        self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg=FONDO_SIDEBAR, fg=TEXTO_BLANCO,
                                        command=self.cargar_datos)
         self.btn_refrescar.pack(side="left", padx=5)
 
@@ -103,7 +104,7 @@ class GestionVehiculos:
         ventana.title("Nuevo Vehículo" if id_vehiculo is None else "Editar Vehículo")
         ventana.geometry("450x350")
         ventana.resizable(False, False)
-        ventana.configure(bg="white")
+        ventana.configure(bg=FONDO_TARJETA)
 
         def validar_longitud_y_caracter(caracter, texto_actual, max_len, alfanumerico=True):
             if caracter == '':
@@ -124,19 +125,19 @@ class GestionVehiculos:
         cliente_map = {c['nombre']: c['id'] for c in clientes}
         nombres_clientes = list(cliente_map.keys())
 
-        tk.Label(ventana, text="Placa *:", bg="white").grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Placa *:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
         entry_placa = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_placa, '%S', '%P'))
         entry_placa.grid(row=0, column=1, padx=10, pady=10)
 
-        tk.Label(ventana, text="Marca:", bg="white").grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Marca:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="e")
         entry_marca = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_marca, '%S', '%P'))
         entry_marca.grid(row=1, column=1, padx=10, pady=10)
 
-        tk.Label(ventana, text="Modelo:", bg="white").grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Modelo:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
         entry_modelo = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_modelo, '%S', '%P'))
         entry_modelo.grid(row=2, column=1, padx=10, pady=10)
 
-        tk.Label(ventana, text="Propietario *:", bg="white").grid(row=3, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Propietario *:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=3, column=0, padx=10, pady=10, sticky="e")
         combo_cliente = ttk.Combobox(ventana, values=nombres_clientes, width=27)
         combo_cliente.grid(row=3, column=1, padx=10, pady=10)
 
@@ -194,7 +195,7 @@ class GestionVehiculos:
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = tk.Button(ventana, text="Guardar", bg="#27ae60", fg="white", command=guardar)
+        btn_guardar = tk.Button(ventana, text="Guardar", bg=COLOR_VERDE, fg=TEXTO_BLANCO, command=guardar)
         btn_guardar.grid(row=4, column=0, columnspan=2, pady=20)
 
         def convertir_mayusculas(event):

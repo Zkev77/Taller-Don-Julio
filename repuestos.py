@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, Toplevel
 from database import Database
+from colores_app import *
 
 class GestionRepuestos:
     def __init__(self, parent, rol, usuario_actual):
@@ -8,27 +9,27 @@ class GestionRepuestos:
         self.rol = rol
         self.usuario_actual = usuario_actual
         self.db = Database()
-        self.frame = tk.Frame(parent, bg="white")
+        self.frame = tk.Frame(parent, bg=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.toolbar = tk.Frame(self.frame, bg="white")
+        self.toolbar = tk.Frame(self.frame, bg=FONDO_TARJETA)
         self.toolbar.pack(fill="x", pady=5)
 
-        self.btn_agregar = tk.Button(self.toolbar, text="+ Agregar Repuesto", bg="#e67e22", fg="white",
+        self.btn_agregar = tk.Button(self.toolbar, text="+ Agregar Repuesto", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
                                      command=self.abrir_formulario_agregar)
         if self.rol != 'admin':
             self.btn_agregar.config(state="disabled")
         self.btn_agregar.pack(side="left", padx=5)
 
-        self.btn_editar = tk.Button(self.toolbar, text="✏ Editar", bg="#3498db", fg="white",
+        self.btn_editar = tk.Button(self.toolbar, text="✏ Editar", bg=COLOR_AZUL, fg=TEXTO_BLANCO,
                                     command=self.abrir_formulario_editar)
         self.btn_editar.pack(side="left", padx=5)
 
-        self.btn_eliminar = tk.Button(self.toolbar, text="🗑 Eliminar", bg="#e74c3c", fg="white",
+        self.btn_eliminar = tk.Button(self.toolbar, text="🗑 Eliminar", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
                                       command=self.eliminar_repuesto)
         self.btn_eliminar.pack(side="left", padx=5)
 
-        self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg="#2c3e50", fg="white",
+        self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg=FONDO_SIDEBAR, fg=TEXTO_BLANCO,
                                        command=self.cargar_datos)
         self.btn_refrescar.pack(side="left", padx=5)
 
@@ -41,7 +42,7 @@ class GestionRepuestos:
         elif self.rol == 'mecanico':
             self.toolbar.pack_forget()
             tk.Label(self.frame, text="⛔ Acceso denegado para mecánicos",
-                    font=("Arial", 12), fg="red", bg="white").pack(pady=20)
+                     font=("Arial", 12), fg=TEXTO_GRIS, bg=FONDO_TARJETA).pack(pady=20)
             return
         elif self.rol in ['admin', 'secretaria']:
             pass
@@ -106,7 +107,7 @@ class GestionRepuestos:
         ventana.title("Nuevo Repuesto" if id_repuesto is None else "Editar Repuesto")
         ventana.geometry("450x400")
         ventana.resizable(False, False)
-        ventana.configure(bg="white")
+        ventana.configure(bg=FONDO_TARJETA)
 
         def solo_letras_numeros_espacios(caracter, texto_actual, max_len):
             if caracter == '':
@@ -134,24 +135,24 @@ class GestionRepuestos:
         vcmd_stock = ventana.register(lambda c, t: solo_digitos(c, t, 6))
         vcmd_proveedor = ventana.register(lambda c, t: solo_letras_numeros_espacios(c, t, 100))
 
-        tk.Label(ventana, text="Nombre *:", bg="white").grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Nombre *:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
         entry_nombre = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_nombre, '%S', '%P'))
         entry_nombre.grid(row=0, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Descripción:", bg="white").grid(row=1, column=0, padx=10, pady=10, sticky="ne")
-        txt_descripcion = tk.Text(ventana, width=30, height=4)
+        tk.Label(ventana, text="Descripción:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="ne")
+        txt_descripcion = tk.Text(ventana, width=30, height=4, bg=FONDO_TARJETA, fg=TEXTO_BLANCO)
         txt_descripcion.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Precio *:", bg="white").grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Precio *:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
         entry_precio = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_precio, '%S', '%P'))
         entry_precio.grid(row=2, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Stock:", bg="white").grid(row=3, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Stock:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=3, column=0, padx=10, pady=10, sticky="e")
         entry_stock = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_stock, '%S', '%P'))
         entry_stock.grid(row=3, column=1, padx=10, pady=10, sticky="w")
         entry_stock.insert(0, "0")
 
-        tk.Label(ventana, text="Proveedor:", bg="white").grid(row=4, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Proveedor:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=4, column=0, padx=10, pady=10, sticky="e")
         entry_proveedor = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_proveedor, '%S', '%P'))
         entry_proveedor.grid(row=4, column=1, padx=10, pady=10, sticky="w")
 
@@ -210,7 +211,7 @@ class GestionRepuestos:
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = tk.Button(ventana, text="Guardar", bg="#27ae60", fg="white", command=guardar)
+        btn_guardar = tk.Button(ventana, text="Guardar", bg=COLOR_VERDE, fg=TEXTO_BLANCO, command=guardar)
         btn_guardar.grid(row=5, column=0, columnspan=2, pady=20)
 
     def eliminar_repuesto(self):

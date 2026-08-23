@@ -1,33 +1,34 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, Toplevel
 from database import Database
+from colores_app import *
 
 class GestionReportes:
-    def __init__(self, parent, rol, usuario_actual=None):  
+    def __init__(self, parent, rol, usuario_actual=None):
         self.parent = parent
         self.rol = rol
         self.usuario_actual = usuario_actual
         self.db = Database()
-        self.frame = tk.Frame(parent, bg="white")
+        self.frame = tk.Frame(parent, bg=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         if self.rol not in ['admin', 'auditor']:
             tk.Label(self.frame, text="⛔ Acceso denegado\nSolo administradores y auditores pueden ver reportes",
-                     font=("Arial", 14, "bold"), fg="red", bg="white", justify="center").pack(pady=50)
+                     font=("Arial", 14, "bold"), fg=TEXTO_GRIS, bg=FONDO_TARJETA, justify="center").pack(pady=50)
             return
 
-        self.toolbar = tk.Frame(self.frame, bg="white")
+        self.toolbar = tk.Frame(self.frame, bg=FONDO_TARJETA)
         self.toolbar.pack(fill="x", pady=5)
 
-        btn_estadisticas = tk.Button(self.toolbar, text="📊 Estadísticas", bg="#3498db", fg="white",
+        btn_estadisticas = tk.Button(self.toolbar, text="📊 Estadísticas", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
                                      command=self.mostrar_estadisticas)
         btn_estadisticas.pack(side="left", padx=5)
 
-        btn_logs = tk.Button(self.toolbar, text="📋 Auditoría", bg="#2c3e50", fg="white",
+        btn_logs = tk.Button(self.toolbar, text="📋 Auditoría", bg=FONDO_SIDEBAR, fg=TEXTO_BLANCO,
                              command=self.mostrar_logs)
         btn_logs.pack(side="left", padx=5)
 
-        btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg="#2c3e50", fg="white",
+        btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg=FONDO_SIDEBAR, fg=TEXTO_BLANCO,
                                   command=self.cargar_datos)
         btn_refrescar.pack(side="left", padx=5)
 
@@ -83,44 +84,44 @@ class GestionReportes:
         ventana = Toplevel(self.parent)
         ventana.title("📊 Estadísticas del Taller")
         ventana.geometry("500x450")
-        ventana.configure(bg="white")
+        ventana.configure(bg=FONDO_TARJETA)
         ventana.resizable(False, False)
 
-        tk.Label(ventana, text="📊 Estadísticas del Taller Don Julio", 
-                 font=("Arial", 16, "bold"), bg="white", fg="#2c3e50").pack(pady=15)
+        tk.Label(ventana, text="📊 Estadísticas del Taller Don Julio",
+                 font=("Arial", 16, "bold"), bg=FONDO_TARJETA, fg=TEXTO_BLANCO).pack(pady=15)
 
-        frame_stats = tk.Frame(ventana, bg="white")
+        frame_stats = tk.Frame(ventana, bg=FONDO_TARJETA)
         frame_stats.pack(fill="both", expand=True, padx=20, pady=10)
 
-        tk.Label(frame_stats, text=f"👥 Clientes registrados: {stats['total_clientes']}", 
-                 font=("Arial", 12), bg="white", fg="#2c3e50").pack(anchor="w", pady=5)
+        tk.Label(frame_stats, text=f"👥 Clientes registrados: {stats['total_clientes']}",
+                 font=("Arial", 12), bg=FONDO_TARJETA, fg=TEXTO_GRIS).pack(anchor="w", pady=5)
 
-        tk.Label(frame_stats, text=f"🚗 Vehículos registrados: {stats['total_vehiculos']}", 
-                 font=("Arial", 12), bg="white", fg="#2c3e50").pack(anchor="w", pady=5)
+        tk.Label(frame_stats, text=f"🚗 Vehículos registrados: {stats['total_vehiculos']}",
+                 font=("Arial", 12), bg=FONDO_TARJETA, fg=TEXTO_GRIS).pack(anchor="w", pady=5)
 
-        tk.Label(frame_stats, text=f"📅 Órdenes este mes: {stats['ordenes_mes']}", 
-                 font=("Arial", 12), bg="white", fg="#2c3e50").pack(anchor="w", pady=5)
+        tk.Label(frame_stats, text=f"📅 Órdenes este mes: {stats['ordenes_mes']}",
+                 font=("Arial", 12), bg=FONDO_TARJETA, fg=TEXTO_GRIS).pack(anchor="w", pady=5)
 
-        tk.Label(frame_stats, text=f"⚠️ Repuestos con bajo stock (< 5): {stats['repuestos_bajo_stock']}", 
-                 font=("Arial", 12), bg="white", fg="#e74c3c").pack(anchor="w", pady=5)
+        tk.Label(frame_stats, text=f"⚠️ Repuestos con bajo stock (< 5): {stats['repuestos_bajo_stock']}",
+                 font=("Arial", 12), bg=FONDO_TARJETA, fg=COLOR_ACENTO).pack(anchor="w", pady=5)
 
-        tk.Label(frame_stats, text="📋 Órdenes por estado:", 
-                 font=("Arial", 12, "bold"), bg="white", fg="#2c3e50").pack(anchor="w", pady=(15, 5))
+        tk.Label(frame_stats, text="📋 Órdenes por estado:",
+                 font=("Arial", 12, "bold"), bg=FONDO_TARJETA, fg=TEXTO_BLANCO).pack(anchor="w", pady=(15, 5))
 
         estado_colores = {
-            'Ingresado': '#f39c12',
-            'Revisión': '#3498db',
-            'Trabajando': '#2ecc71',
+            'Ingresado': COLOR_AMARILLO,
+            'Revisión': COLOR_AZUL,
+            'Trabajando': COLOR_VERDE,
             'Completado': '#1abc9c',
             'Entregado': '#27ae60'
         }
 
         for estado in stats['ordenes_por_estado']:
-            color = estado_colores.get(estado['estado'], '#2c3e50')
-            tk.Label(frame_stats, text=f"  • {estado['estado']}: {estado['total']}", 
-                     font=("Arial", 11), bg="white", fg=color).pack(anchor="w", pady=2)
+            color = estado_colores.get(estado['estado'], TEXTO_GRIS)
+            tk.Label(frame_stats, text=f"  • {estado['estado']}: {estado['total']}",
+                     font=("Arial", 11), bg=FONDO_TARJETA, fg=color).pack(anchor="w", pady=2)
 
-        btn_cerrar = tk.Button(ventana, text="Cerrar", bg="#e74c3c", fg="white", 
+        btn_cerrar = tk.Button(ventana, text="Cerrar", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
                                command=ventana.destroy)
         btn_cerrar.pack(pady=15)
 

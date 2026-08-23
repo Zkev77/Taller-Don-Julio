@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, Toplevel
 from database import Database
+from colores_app import *
 
 class GestionClientes:
     def __init__(self, parent, rol, usuario_actual):
@@ -9,27 +10,27 @@ class GestionClientes:
         self.usuario_actual = usuario_actual
         self.db = Database()
         self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
-        self.frame = tk.Frame(parent, bg="white")
+        self.frame = tk.Frame(parent, bg=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.toolbar = tk.Frame(self.frame, bg="white")
+        self.toolbar = tk.Frame(self.frame, bg=FONDO_TARJETA)
         self.toolbar.pack(fill="x", pady=5)
 
-        self.btn_agregar = tk.Button(self.toolbar, text="+ Agregar Cliente", bg="#e67e22", fg="white",
+        self.btn_agregar = tk.Button(self.toolbar, text="+ Agregar Cliente", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
                                      command=self.abrir_formulario_agregar)
         if self.rol != 'admin':
             self.btn_agregar.config(state="disabled")
         self.btn_agregar.pack(side="left", padx=5)
 
-        self.btn_editar = tk.Button(self.toolbar, text="✏ Editar", bg="#3498db", fg="white",
+        self.btn_editar = tk.Button(self.toolbar, text="✏ Editar", bg=COLOR_AZUL, fg=TEXTO_BLANCO,
                                     command=self.abrir_formulario_editar)
         self.btn_editar.pack(side="left", padx=5)
 
-        self.btn_eliminar = tk.Button(self.toolbar, text="🗑 Eliminar", bg="#e74c3c", fg="white",
+        self.btn_eliminar = tk.Button(self.toolbar, text="🗑 Eliminar", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
                                       command=self.eliminar_cliente)
         self.btn_eliminar.pack(side="left", padx=5)
 
-        self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg="#2c3e50", fg="white",
+        self.btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg=FONDO_SIDEBAR, fg=TEXTO_BLANCO,
                                        command=self.cargar_datos)
         self.btn_refrescar.pack(side="left", padx=5)
 
@@ -40,10 +41,9 @@ class GestionClientes:
         elif self.rol == 'mecanico':
             self.toolbar.pack_forget()
             tk.Label(self.frame, text="⛔ Acceso denegado para mecánicos",
-                    font=("Arial", 12), fg="red", bg="white").pack(pady=20)
-            return  # Sale del __init__ para no mostrar el Treeview
+                     font=("Arial", 12), fg=TEXTO_GRIS, bg=FONDO_TARJETA).pack(pady=20)
+            return
         elif self.rol in ['admin', 'secretaria']:
-            # CRUD completo (los botones ya están habilitados por defecto)
             pass
 
         self.tree = ttk.Treeview(self.frame, columns=("ID", "Cédula", "Nombre", "Teléfono", "Email"),
@@ -103,7 +103,7 @@ class GestionClientes:
         ventana.title("Nuevo Cliente" if id_cliente is None else "Editar Cliente")
         ventana.geometry("500x400")
         ventana.resizable(False, False)
-        ventana.configure(bg="white")
+        ventana.configure(bg=FONDO_TARJETA)
 
         def solo_digitos_y_longitud(caracter, texto_actual, max_len):
             if caracter == '':
@@ -123,22 +123,22 @@ class GestionClientes:
         vcmd_nombre = ventana.register(lambda c, t: solo_letras_espacios_y_longitud(c, t, 50))
         vcmd_telefono_num = ventana.register(lambda c, t: solo_digitos_y_longitud(c, t, 7))
 
-        tk.Label(ventana, text="Tipo Cédula:", bg="white").grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Tipo Cédula:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
         tipos = ['V', 'E']
         combo_tipo = ttk.Combobox(ventana, values=tipos, width=5, state="readonly")
         combo_tipo.grid(row=0, column=1, padx=10, pady=10, sticky="w")
         combo_tipo.set('V')
 
-        tk.Label(ventana, text="Número Cédula:", bg="white").grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Número Cédula:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="e")
         entry_cedula_num = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_cedula_num, '%S', '%P'))
         entry_cedula_num.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Nombre completo:", bg="white").grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Nombre completo:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
         entry_nombre = tk.Entry(ventana, width=30, validate="key", validatecommand=(vcmd_nombre, '%S', '%P'))
         entry_nombre.grid(row=2, column=1, padx=10, pady=10, sticky="w")
 
-        tk.Label(ventana, text="Teléfono:", bg="white").grid(row=3, column=0, padx=10, pady=10, sticky="e")
-        frame_telefono = tk.Frame(ventana, bg="white")
+        tk.Label(ventana, text="Teléfono:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=3, column=0, padx=10, pady=10, sticky="e")
+        frame_telefono = tk.Frame(ventana, bg=FONDO_TARJETA)
         frame_telefono.grid(row=3, column=1, padx=10, pady=10, sticky="w")
 
         prefijos = ['0412', '0414', '0416', '0424', '0426', '0410']
@@ -149,7 +149,7 @@ class GestionClientes:
         entry_telefono_num = tk.Entry(frame_telefono, width=20, validate="key", validatecommand=(vcmd_telefono_num, '%S', '%P'))
         entry_telefono_num.pack(side="left")
 
-        tk.Label(ventana, text="Email:", bg="white").grid(row=4, column=0, padx=10, pady=10, sticky="e")
+        tk.Label(ventana, text="Email:", bg=FONDO_TARJETA, fg=TEXTO_BLANCO).grid(row=4, column=0, padx=10, pady=10, sticky="e")
         entry_email = tk.Entry(ventana, width=30)
         entry_email.grid(row=4, column=1, padx=10, pady=10, sticky="w")
 
@@ -232,7 +232,7 @@ class GestionClientes:
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = tk.Button(ventana, text="Guardar", bg="#27ae60", fg="white", command=guardar)
+        btn_guardar = tk.Button(ventana, text="Guardar", bg=COLOR_VERDE, fg=TEXTO_BLANCO, command=guardar)
         btn_guardar.grid(row=5, column=0, columnspan=2, pady=20)
 
     def eliminar_cliente(self):
@@ -253,4 +253,13 @@ class GestionClientes:
                   registro_id=id_cliente,
                   accion="DELETE",
                   descripcion=f"Eliminado cliente ID {id_cliente} - {nombre_cliente}"
-                ) 
+                )
+                messagebox.showinfo("Éxito", "Cliente eliminado", parent=self.frame)
+                try:
+                    self.cargar_datos()
+                    self.tree.update()
+                    self.tree.selection_remove(self.tree.selection())
+                except Exception as e:
+                    messagebox.showerror("Error", f"No se pudo actualizar la lista: {e}", parent=self.frame)
+            else:
+                messagebox.showerror("Error", mensaje, parent=self.frame)
