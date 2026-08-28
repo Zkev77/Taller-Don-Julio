@@ -139,19 +139,21 @@ class Database:
     def listar_clientes_combobox(self):
         return self.fetch_all("SELECT id, nombre FROM clientes ORDER BY nombre")
 
-    def agregar_vehiculo(self, placa, marca, modelo, cliente_id):
-        if self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s", (placa,)):
-            return False, "La placa ya existe"
-        query = "INSERT INTO vehiculos (placa, marca, modelo, cliente_id) VALUES (%s, %s, %s, %s)"
-        exito, mensaje, _ = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id))
-        return exito, mensaje
-
+    # CORREGIDO: Única definición de agregar_vehiculo, retorna 3 valores
     def agregar_vehiculo(self, placa, marca, modelo, cliente_id):
         if self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s", (placa,)):
             return False, "La placa ya existe", None
         query = "INSERT INTO vehiculos (placa, marca, modelo, cliente_id) VALUES (%s, %s, %s, %s)"
         exito, mensaje, lastrowid = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id))
         return exito, mensaje, lastrowid
+
+    def actualizar_vehiculo(self, id_vehiculo, placa, marca, modelo, cliente_id):
+        duplicado = self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s AND id != %s", (placa, id_vehiculo))
+        if duplicado:
+            return False, "La placa ya está en uso por otro vehículo"
+        query = "UPDATE vehiculos SET placa=%s, marca=%s, modelo=%s, cliente_id=%s WHERE id=%s"
+        exito, mensaje, _ = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id, id_vehiculo))
+        return exito, mensaje
 
     def obtener_vehiculo_por_id(self, id_vehiculo):
         res = self.fetch_all("SELECT id, placa, marca, modelo, cliente_id FROM vehiculos WHERE id=%s", (id_vehiculo,))
@@ -162,10 +164,11 @@ class Database:
         exito, mensaje, _ = self.execute_query(query, (id_vehiculo,))
         return exito, mensaje
 
+    # CORREGIDO: Agregado total_orden_usd en la consulta
     def listar_ordenes_completas(self):
         query = """
             SELECT 
-                o.id, o.descripcion, o.estado, o.fecha,
+                o.id, o.descripcion, o.estado, o.fecha, o.total_orden_usd,
                 v.placa, v.marca, v.modelo,
                 c.nombre AS cliente_nombre
             FROM ordenes o
@@ -322,3 +325,78 @@ class Database:
     def obtener_id_usuario(self, username):
         res = self.fetch_all("SELECT id FROM usuarios WHERE username = %s", (username,))
         return res[0]['id'] if res else None
+
+    def obtener_detalle_orden_pagos(self, id_orden):
+        query = """
+            SELECT 
+                o.id, 
+                o.descripcion, 
+                o.estado, 
+                COALESCE(o.total_orden_usd, 0) as total_orden_usd,
+                COALESCE(SUM(p.monto_ref_usd), 0) as total_pagado
+            FROM ordenes o
+            LEFT JOIN pagos p ON o.id = p.orden_id
+            WHERE o.id = %s
+            GROUP BY o.id
+        """
+        res = self.fetch_all(query, (id_orden,))
+        if res:
+            return res[0]
+        # Si no encuentra la orden, devolver un diccionario vacío con valores por defecto
+        return {
+            'id': id_orden,
+            'descripcion': 'Orden no encontrada',
+            'estado': 'Desconocido',
+            'total_orden_usd': 0,
+            'total_pagado': 0
+        }
+
+    def listar_pagos_por_orden(self, id_orden):
+        query = """
+            SELECT id, monto_original, moneda, tasa_cambio, monto_ref_usd,
+                   fecha_pago, metodo_pago, referencia
+            FROM pagos
+            WHERE orden_id = %s
+            ORDER BY fecha_pago DESC
+        """
+        return self.fetch_all(query, (id_orden,))
+
+    def registrar_pago(self, orden_id, monto_original, moneda, tasa_cambio, monto_ref_usd, metodo_pago, referencia=""):
+        query = """
+            INSERT INTO pagos (orden_id, monto_original, moneda, tasa_cambio, monto_ref_usd, metodo_pago, referencia)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+        return self.execute_query(query, (orden_id, monto_original, moneda, tasa_cambio, monto_ref_usd, metodo_pago, referencia))
+
+    def obtener_resumen_pagos(self):
+        query = """
+            SELECT 
+                DATE_FORMAT(fecha_pago, '%Y-%m') as mes,
+                SUM(monto_ref_usd) as total_usd
+            FROM pagos
+            GROUP BY mes
+            ORDER BY mes
+        """
+        return self.fetch_all(query)
+
+    def obtener_distribucion_monedas(self):
+        query = """
+            SELECT moneda, SUM(monto_ref_usd) as total_usd
+            FROM pagos
+            GROUP BY moneda
+        """
+        return self.fetch_all(query)
+
+    def obtener_historial_pagos(self):
+        query = """
+            SELECT p.id, o.id as orden_id, c.nombre as cliente,
+                CONCAT(v.marca, ' ', v.modelo) as vehiculo,
+                p.monto_original, p.moneda, p.tasa_cambio,
+                p.monto_ref_usd, p.fecha_pago, p.metodo_pago, p.referencia
+            FROM pagos p
+            JOIN ordenes o ON p.orden_id = o.id
+            JOIN vehiculos v ON o.vehiculo_id = v.id
+            JOIN clientes c ON v.cliente_id = c.id
+            ORDER BY p.fecha_pago DESC
+        """
+        return self.fetch_all(query)

@@ -5,6 +5,7 @@ from servicios import GestionServicios
 from repuestos import GestionRepuestos
 from reportes import GestionReportes
 from configuracion import GestionConfiguracion
+from presupuesto import GestionPresupuestos
 from database import Database
 from colores_app import *
 
@@ -79,6 +80,7 @@ class MenuTaller:
             "👥 Clientes": self.mostrar_clientes,
             "🚗 Vehículos": self.mostrar_vehiculos,
             "🛠️ Servicios/Reparaciones": self.mostrar_servicios,
+            "💰 Presupuestos": self.mostrar_presupuestos,
             "📦 Repuestos": self.mostrar_repuestos,
             "📊 Reportes/Auditoría": self.mostrar_reportes,
             "⚙️ Configuración": self.mostrar_config
@@ -115,7 +117,8 @@ class MenuTaller:
             "servicios": GestionServicios,
             "repuestos": GestionRepuestos,
             "reportes": GestionReportes,
-            "configuracion": GestionConfiguracion
+            "configuracion": GestionConfiguracion,
+            "presupuestos": GestionPresupuestos
         }
 
         for nombre, clase in modulos.items():
@@ -192,6 +195,9 @@ class MenuTaller:
 
     def mostrar_servicios(self):
         self._mostrar_modulo("servicios")
+
+    def mostrar_presupuestos(self):
+        self._mostrar_modulo("presupuestos")
 
     def mostrar_repuestos(self):
         self._mostrar_modulo("repuestos")

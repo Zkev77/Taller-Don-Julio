@@ -133,4 +133,19 @@ INSERT IGNORE INTO usuarios (username, password, rol) VALUES
 ('Dayary', SHA2('secretaria123', 256), 'secretaria'),
 ('Mecanico1', SHA2('mecanico123', 256), 'mecanico'),
 ('Auditor1', SHA2('auditor123', 256), 'auditor');
+
+ALTER TABLE ordenes ADD COLUMN total_orden_usd DECIMAL(10,2) DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS pagos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    orden_id INT NOT NULL,
+    monto_original DECIMAL(12,2) NOT NULL,
+    moneda ENUM('USD', 'COP', 'BS') NOT NULL,
+    tasa_cambio DECIMAL(10,2) NOT NULL,
+    monto_ref_usd DECIMAL(10,2) NOT NULL,
+    fecha_pago DATETIME DEFAULT CURRENT_TIMESTAMP,
+    metodo_pago ENUM('Efectivo', 'Transferencia', 'Pago Movil', 'Zelle', 'Otro') NOT NULL,
+    referencia VARCHAR(50),
+    FOREIGN KEY (orden_id) REFERENCES ordenes(id) ON DELETE CASCADE
+);
  
