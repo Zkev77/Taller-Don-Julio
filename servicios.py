@@ -158,13 +158,13 @@ class GestionServicios:
                 messagebox.showerror("Error", "Vehículo no válido", parent=ventana)
                 return
 
-            exito, mensaje = self.db.crear_orden(vehiculo_id, descripcion, "Ingresado")
+            exito, mensaje, nuevo_id = self.db.crear_orden(vehiculo_id, descripcion, "Ingresado")
             if exito:
                 self.db.registrar_log(
                     usuario_id=self.usuario_id,
                     usuario_nombre=self.usuario_actual,
                     tabla="ordenes",
-                    registro_id=0,
+                    registro_id=nuevo_id,
                     accion="INSERT",
                     descripcion=f"Nueva orden: {descripcion[:50]}..."
                 )

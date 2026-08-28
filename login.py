@@ -23,7 +23,7 @@ frame_login = ctk.CTkFrame(
     width=650, 
     height=720, 
     corner_radius=30, 
-    fg_color=("white", FONDO_TARJETA)  # Usamos FONDO_TARJETA
+    fg_color=("white", FONDO_TARJETA)  
 )
 frame_login.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.60, relheight=0.85)
 
@@ -32,13 +32,13 @@ ctk.CTkLabel(
     frame_login, 
     text="Taller Don Julio", 
     font=("Inter", 34, "bold"), 
-    text_color=("#1a1a2e", COLOR_ACENTO)  # Usamos COLOR_ACENTO
+    text_color=("#1a1a2e", COLOR_ACENTO)  
 ).pack(pady=(0, 4))
 ctk.CTkLabel(
     frame_login, 
     text="Sistema de Gestión Operativa", 
     font=("Inter", 17), 
-    text_color=("gray40", TEXTO_GRIS)  # Usamos TEXTO_GRIS
+    text_color=("gray40", TEXTO_GRIS)  
 ).pack(pady=(0, 35))
 
 def limpiar_error(e=None):

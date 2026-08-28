@@ -199,18 +199,19 @@ class GestionVehiculos:
                 return
 
             if id_vehiculo is None:
-                exito, mensaje, _ = self.db.agregar_vehiculo(placa, marca, modelo, cliente_id)
+                exito, mensaje, nuevo_id = self.db.agregar_vehiculo(placa, marca, modelo, cliente_id)
             else:
                 exito, mensaje = self.db.actualizar_vehiculo(id_vehiculo, placa, marca, modelo, cliente_id)
 
             if exito:
                 accion = "INSERT" if id_vehiculo is None else "UPDATE"
                 desc = f"{accion} en vehiculos: {placa} - {marca} {modelo}"
+                registro_id = nuevo_id if id_vehiculo is None else id_vehiculo
                 self.db.registrar_log(
                     usuario_id=self.usuario_id,
                     usuario_nombre=self.usuario_actual,
                     tabla="vehiculos",
-                    registro_id=id_vehiculo or 0,
+                    registro_id=registro_id,
                     accion=accion,
                     descripcion=desc
                 )

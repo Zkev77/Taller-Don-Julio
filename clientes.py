@@ -216,8 +216,8 @@ class GestionClientes:
             if not cedula_num:
                 messagebox.showerror("Error", "El número de cédula es obligatorio", parent=ventana)
                 return
-            if len(cedula_num) != 8:
-                messagebox.showerror("Error", "La cédula debe tener exactamente 8 dígitos", parent=ventana)
+            if len(cedula_num) < 6 or len(cedula_num) > 8:
+                messagebox.showerror("Error", "La cédula debe tener entre 6 y 8 dígitos", parent=ventana)
                 return
             if not nombre:
                 messagebox.showerror("Error", "El nombre es obligatorio", parent=ventana)
@@ -238,18 +238,19 @@ class GestionClientes:
                 return
 
             if id_cliente is None:
-                exito, mensaje, _ = self.db.agregar_cliente(cedula_completa, nombre, telefono_completo, email)
+                exito, mensaje, nuevo_id = self.db.agregar_cliente(cedula_completa, nombre, telefono_completo, email)
             else:
                 exito, mensaje = self.db.actualizar_cliente(id_cliente, cedula_completa, nombre, telefono_completo, email)
 
             if exito:
                 accion = "INSERT" if id_cliente is None else "UPDATE"
                 desc = f"{accion} en clientes: {cedula_completa} - {nombre}"
+                registro_id = nuevo_id if id_cliente is None else id_cliente
                 self.db.registrar_log(
                     usuario_id=self.usuario_id,
                     usuario_nombre=self.usuario_actual,
                     tabla="clientes",
-                    registro_id=id_cliente or 0,
+                    registro_id=registro_id,
                     accion=accion,
                     descripcion=desc
                 )

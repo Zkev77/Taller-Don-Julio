@@ -168,17 +168,40 @@ class GestionConfiguracion:
         btn_guardar.grid(row=3, column=0, columnspan=2, pady=20)
 
     def _eliminar_usuario(self):
-        id_usuario = self._obtener_usuario_seleccionado()
-        if not id_usuario:
-            return
-        if messagebox.askyesno("Confirmar", "¿Eliminar este usuario permanentemente?"):
-            exito, mensaje, _ = self.db.execute_query("DELETE FROM usuarios WHERE id=%s", (id_usuario,))
-            if exito:
-                messagebox.showinfo("Éxito", "Usuario eliminado")
-                self._cargar_usuarios()
-            else:
-                messagebox.showerror("Error", mensaje)
-
+                id_usuario = self._obtener_usuario_seleccionado()
+                if not id_usuario:
+                    return
+    
+                datos_usuario = self.db.fetch_all("SELECT id, username, rol FROM usuarios WHERE id=%s", (id_usuario,))
+                if not datos_usuario:
+                    messagebox.showerror("Error", "Usuario no encontrado")
+                    return
+    
+                usuario_seleccionado = datos_usuario[0]
+                id_usuario_actual = self.db.obtener_id_usuario(self.usuario_actual)
+    
+                if id_usuario_actual is None:
+                    messagebox.showerror("Error", "No se pudo identificar al usuario actual")
+                    return
+    
+                if id_usuario == id_usuario_actual:
+                    messagebox.showerror("Error", "No puedes eliminarte a ti mismo mientras estás logueado")
+                    return
+    
+                if usuario_seleccionado['rol'] == 'admin':
+                    admins = self.db.fetch_all("SELECT COUNT(*) as total FROM usuarios WHERE rol='admin'")
+                    if admins and admins[0]['total'] <= 1:
+                        messagebox.showerror("Error", "No puedes eliminar al último administrador del sistema")
+                        return
+    
+                if messagebox.askyesno("Confirmar", f"¿Eliminar al usuario '{usuario_seleccionado['username']}' permanentemente?"):
+                    exito, mensaje, _ = self.db.execute_query("DELETE FROM usuarios WHERE id=%s", (id_usuario,))
+                    if exito:
+                        messagebox.showinfo("Éxito", "Usuario eliminado")
+                        self._cargar_usuarios()
+                    else:
+                        messagebox.showerror("Error", mensaje)
+    
     def _crear_pestania_password(self):
         frame = ctk.CTkFrame(self.tab_password, fg_color=FONDO_TARJETA)
         frame.pack(pady=30)
@@ -235,19 +258,22 @@ class GestionConfiguracion:
             fecha = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             archivo = f"backup_taller_{fecha}.sql"
             try:
+                import os
+                import subprocess
+                env = os.environ.copy()
+                env['MYSQL_PWD'] = self.db.password
                 comando = [
                     "mysqldump",
                     f"-u{self.db.user}",
-                    f"-p{self.db.password}",
                     self.db.database
                 ]
                 with open(archivo, "w", encoding="utf-8") as f:
-                    subprocess.run(comando, stdout=f, check=True, stderr=subprocess.PIPE)
+                    subprocess.run(comando, stdout=f, check=True, stderr=subprocess.PIPE, env=env)
                 messagebox.showinfo("Éxito", f"Respaldo guardado correctamente en:\n{os.path.abspath(archivo)}")
             except FileNotFoundError:
                 messagebox.showerror("Error", "mysqldump no está instalado o no se encuentra en el PATH.\n"
-                                   "En Linux: sudo apt install mysql-client\n"
-                                   "En Windows: agregue la ruta de MySQL al PATH")
+                                "En Linux: sudo apt install mysql-client\n"
+                                "En Windows: agregue la ruta de MySQL al PATH")
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo crear el respaldo:\n{e}")
 

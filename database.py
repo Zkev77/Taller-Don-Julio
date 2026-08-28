@@ -94,10 +94,10 @@ class Database:
 
     def agregar_cliente(self, cedula, nombre, telefono, email):
         if self.fetch_all("SELECT id FROM clientes WHERE cedula = %s", (cedula,)):
-            return False, "La cédula ya existe"
+            return False, "La cédula ya existe", None
         query = "INSERT INTO clientes (cedula, nombre, telefono, email) VALUES (%s, %s, %s, %s)"
-        exito, mensaje, _ = self.execute_query(query, (cedula, nombre, telefono, email))
-        return exito, mensaje
+        exito, mensaje, lastrowid = self.execute_query(query, (cedula, nombre, telefono, email))
+        return exito, mensaje, lastrowid
 
     def actualizar_cliente(self, id_cliente, cedula, nombre, telefono, email):
         duplicado = self.fetch_all("SELECT id FROM clientes WHERE cedula = %s AND id != %s", (cedula, id_cliente))
@@ -146,13 +146,12 @@ class Database:
         exito, mensaje, _ = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id))
         return exito, mensaje
 
-    def actualizar_vehiculo(self, id_vehiculo, placa, marca, modelo, cliente_id):
-        duplicado = self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s AND id != %s", (placa, id_vehiculo))
-        if duplicado:
-            return False, "La placa ya está en uso por otro vehículo"
-        query = "UPDATE vehiculos SET placa=%s, marca=%s, modelo=%s, cliente_id=%s WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id, id_vehiculo))
-        return exito, mensaje
+    def agregar_vehiculo(self, placa, marca, modelo, cliente_id):
+        if self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s", (placa,)):
+            return False, "La placa ya existe", None
+        query = "INSERT INTO vehiculos (placa, marca, modelo, cliente_id) VALUES (%s, %s, %s, %s)"
+        exito, mensaje, lastrowid = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id))
+        return exito, mensaje, lastrowid
 
     def obtener_vehiculo_por_id(self, id_vehiculo):
         res = self.fetch_all("SELECT id, placa, marca, modelo, cliente_id FROM vehiculos WHERE id=%s", (id_vehiculo,))
@@ -187,8 +186,8 @@ class Database:
 
     def crear_orden(self, vehiculo_id, descripcion, estado="Pendiente"):
         query = "INSERT INTO ordenes (vehiculo_id, descripcion, estado, fecha) VALUES (%s, %s, %s, NOW())"
-        exito, mensaje, _ = self.execute_query(query, (vehiculo_id, descripcion, estado))
-        return exito, mensaje
+        exito, mensaje, lastrowid = self.execute_query(query, (vehiculo_id, descripcion, estado))
+        return exito, mensaje, lastrowid
 
     def obtener_orden_completa(self, id_orden):
         query = """
@@ -219,8 +218,8 @@ class Database:
 
     def agregar_repuesto(self, nombre, descripcion, precio, stock, proveedor=""):
         query = "INSERT INTO repuestos (nombre, descripcion, precio, stock, proveedor) VALUES (%s, %s, %s, %s, %s)"
-        exito, mensaje, _ = self.execute_query(query, (nombre, descripcion, precio, stock, proveedor))
-        return exito, mensaje
+        exito, mensaje, lastrowid = self.execute_query(query, (nombre, descripcion, precio, stock, proveedor))
+        return exito, mensaje, lastrowid
 
     def actualizar_repuesto(self, id_repuesto, nombre, descripcion, precio, stock, proveedor=""):
         query = "UPDATE repuestos SET nombre=%s, descripcion=%s, precio=%s, stock=%s, proveedor=%s WHERE id=%s"

@@ -218,18 +218,19 @@ class GestionRepuestos:
                 return
 
             if id_repuesto is None:
-                exito, mensaje, _ = self.db.agregar_repuesto(nombre, descripcion, precio_val, stock_val, proveedor)
+                exito, mensaje, nuevo_id = self.db.agregar_repuesto(nombre, descripcion, precio_val, stock_val, proveedor)
             else:
                 exito, mensaje = self.db.actualizar_repuesto(id_repuesto, nombre, descripcion, precio_val, stock_val, proveedor)
 
             if exito:
                 accion = "INSERT" if id_repuesto is None else "UPDATE"
                 desc = f"{accion} en repuestos: {nombre}"
+                registro_id = nuevo_id if id_repuesto is None else id_repuesto
                 self.db.registrar_log(
                     usuario_id=self.usuario_id,
                     usuario_nombre=self.usuario_actual,
                     tabla="repuestos",
-                    registro_id=id_repuesto or 0,
+                    registro_id=registro_id,
                     accion=accion,
                     descripcion=desc
                 )

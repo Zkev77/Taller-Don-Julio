@@ -1,5 +1,5 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, Toplevel
+import customtkinter as ctk
+from tkinter import ttk, messagebox
 from database import Database
 from colores_app import *
 
@@ -9,31 +9,50 @@ class GestionReportes:
         self.rol = rol
         self.usuario_actual = usuario_actual
         self.db = Database()
-        self.frame = tk.Frame(parent, bg=FONDO_TARJETA)
+        self.frame = ctk.CTkFrame(parent, fg_color=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         if self.rol not in ['admin', 'auditor']:
-            tk.Label(self.frame, text="⛔ Acceso denegado\nSolo administradores y auditores pueden ver reportes",
-                     font=("Arial", 14, "bold"), fg=TEXTO_GRIS, bg=FONDO_TARJETA, justify="center").pack(pady=50)
+            ctk.CTkLabel(
+                self.frame,
+                text="⛔ Acceso denegado\nSolo administradores y auditores pueden ver reportes",
+                font=("Inter", 14, "bold"),
+                text_color=TEXTO_GRIS,
+                justify="center"
+            ).pack(pady=50)
             return
 
-        self.toolbar = tk.Frame(self.frame, bg=FONDO_TARJETA)
+        self.toolbar = ctk.CTkFrame(self.frame, fg_color=FONDO_TARJETA)
         self.toolbar.pack(fill="x", pady=5)
 
-        btn_estadisticas = tk.Button(self.toolbar, text="📊 Estadísticas", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
-                                     command=self.mostrar_estadisticas)
-        btn_estadisticas.pack(side="left", padx=5)
+        self.btn_estadisticas = ctk.CTkButton(
+            self.toolbar,
+            text="📊 Estadísticas",
+            fg_color=COLOR_ACENTO,
+            text_color=TEXTO_BLANCO,
+            command=self.mostrar_estadisticas
+        )
+        self.btn_estadisticas.pack(side="left", padx=5)
 
-        btn_logs = tk.Button(self.toolbar, text="📋 Auditoría", bg=FONDO_SIDEBAR, fg=TEXTO_BLANCO,
-                             command=self.mostrar_logs)
-        btn_logs.pack(side="left", padx=5)
+        self.btn_refrescar = ctk.CTkButton(
+            self.toolbar,
+            text="⟳ Refrescar",
+            fg_color=FONDO_SIDEBAR,
+            text_color=TEXTO_BLANCO,
+            command=self.cargar_datos
+        )
+        self.btn_refrescar.pack(side="left", padx=5)
 
-        btn_refrescar = tk.Button(self.toolbar, text="⟳ Refrescar", bg=FONDO_SIDEBAR, fg=TEXTO_BLANCO,
-                                  command=self.cargar_datos)
-        btn_refrescar.pack(side="left", padx=5)
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Treeview", background=FONDO_TARJETA, foreground=TEXTO_BLANCO, fieldbackground=FONDO_TARJETA)
+        style.map("Treeview", background=[('selected', COLOR_ACENTO)])
 
-        self.tree = ttk.Treeview(self.frame, columns=("ID", "Usuario", "Tabla", "Registro", "Acción", "Descripción", "Fecha"),
-                                 show="headings")
+        self.tree = ttk.Treeview(
+            self.frame,
+            columns=("ID", "Usuario", "Tabla", "Registro", "Acción", "Descripción", "Fecha"),
+            show="headings"
+        )
         self.tree.heading("ID", text="ID")
         self.tree.heading("Usuario", text="Usuario")
         self.tree.heading("Tabla", text="Tabla")
@@ -81,32 +100,58 @@ class GestionReportes:
     def mostrar_estadisticas(self):
         stats = self.db.obtener_estadisticas_taller()
 
-        ventana = Toplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.parent)
         ventana.title("📊 Estadísticas del Taller")
         ventana.geometry("500x450")
-        ventana.configure(bg=FONDO_TARJETA)
         ventana.resizable(False, False)
 
-        tk.Label(ventana, text="📊 Estadísticas del Taller Don Julio",
-                 font=("Arial", 16, "bold"), bg=FONDO_TARJETA, fg=TEXTO_BLANCO).pack(pady=15)
+        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        frame_stats = tk.Frame(ventana, bg=FONDO_TARJETA)
+        ctk.CTkLabel(
+            frame,
+            text="📊 Estadísticas del Taller Don Julio",
+            font=("Inter", 16, "bold"),
+            text_color=TEXTO_BLANCO
+        ).pack(pady=15)
+
+        frame_stats = ctk.CTkFrame(frame, fg_color="transparent")
         frame_stats.pack(fill="both", expand=True, padx=20, pady=10)
 
-        tk.Label(frame_stats, text=f"👥 Clientes registrados: {stats['total_clientes']}",
-                 font=("Arial", 12), bg=FONDO_TARJETA, fg=TEXTO_GRIS).pack(anchor="w", pady=5)
+        ctk.CTkLabel(
+            frame_stats,
+            text=f"👥 Clientes registrados: {stats['total_clientes']}",
+            font=("Inter", 12),
+            text_color=TEXTO_GRIS
+        ).pack(anchor="w", pady=5)
 
-        tk.Label(frame_stats, text=f"🚗 Vehículos registrados: {stats['total_vehiculos']}",
-                 font=("Arial", 12), bg=FONDO_TARJETA, fg=TEXTO_GRIS).pack(anchor="w", pady=5)
+        ctk.CTkLabel(
+            frame_stats,
+            text=f"🚗 Vehículos registrados: {stats['total_vehiculos']}",
+            font=("Inter", 12),
+            text_color=TEXTO_GRIS
+        ).pack(anchor="w", pady=5)
 
-        tk.Label(frame_stats, text=f"📅 Órdenes este mes: {stats['ordenes_mes']}",
-                 font=("Arial", 12), bg=FONDO_TARJETA, fg=TEXTO_GRIS).pack(anchor="w", pady=5)
+        ctk.CTkLabel(
+            frame_stats,
+            text=f"📅 Órdenes este mes: {stats['ordenes_mes']}",
+            font=("Inter", 12),
+            text_color=TEXTO_GRIS
+        ).pack(anchor="w", pady=5)
 
-        tk.Label(frame_stats, text=f"⚠️ Repuestos con bajo stock (< 5): {stats['repuestos_bajo_stock']}",
-                 font=("Arial", 12), bg=FONDO_TARJETA, fg=COLOR_ACENTO).pack(anchor="w", pady=5)
+        ctk.CTkLabel(
+            frame_stats,
+            text=f"⚠️ Repuestos con bajo stock (< 5): {stats['repuestos_bajo_stock']}",
+            font=("Inter", 12),
+            text_color=COLOR_ACENTO
+        ).pack(anchor="w", pady=5)
 
-        tk.Label(frame_stats, text="📋 Órdenes por estado:",
-                 font=("Arial", 12, "bold"), bg=FONDO_TARJETA, fg=TEXTO_BLANCO).pack(anchor="w", pady=(15, 5))
+        ctk.CTkLabel(
+            frame_stats,
+            text="📋 Órdenes por estado:",
+            font=("Inter", 12, "bold"),
+            text_color=TEXTO_BLANCO
+        ).pack(anchor="w", pady=(15, 5))
 
         estado_colores = {
             'Ingresado': COLOR_AMARILLO,
@@ -118,13 +163,18 @@ class GestionReportes:
 
         for estado in stats['ordenes_por_estado']:
             color = estado_colores.get(estado['estado'], TEXTO_GRIS)
-            tk.Label(frame_stats, text=f"  • {estado['estado']}: {estado['total']}",
-                     font=("Arial", 11), bg=FONDO_TARJETA, fg=color).pack(anchor="w", pady=2)
+            ctk.CTkLabel(
+                frame_stats,
+                text=f"  • {estado['estado']}: {estado['total']}",
+                font=("Inter", 11),
+                text_color=color
+            ).pack(anchor="w", pady=2)
 
-        btn_cerrar = tk.Button(ventana, text="Cerrar", bg=COLOR_ACENTO, fg=TEXTO_BLANCO,
-                               command=ventana.destroy)
+        btn_cerrar = ctk.CTkButton(
+            frame,
+            text="Cerrar",
+            fg_color=COLOR_ACENTO,
+            text_color=TEXTO_BLANCO,
+            command=ventana.destroy
+        )
         btn_cerrar.pack(pady=15)
-
-    def mostrar_logs(self):
-        self.cargar_datos()
-        messagebox.showinfo("Auditoría", "Registros de auditoría cargados", parent=self.frame)
