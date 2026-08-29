@@ -28,13 +28,12 @@ class MenuTaller:
         self.modulo_actual = None
         self.frames_modulos = {}
 
-        # ===== SIDEBAR =====
         self.sidebar = ctk.CTkFrame(self.root, fg_color=FONDO_SIDEBAR, width=220, corner_radius=0)
         self.sidebar.pack(side="left", fill="y")
 
         self.lbl_titulo = ctk.CTkLabel(
             self.sidebar,
-            text="🚗 TALLER\nDON JULIO",
+            text="TALLER\nDON JULIO",
             font=("Inter", 18, "bold"),
             text_color=COLOR_ACENTO
         )
@@ -55,6 +54,20 @@ class MenuTaller:
 
         self._crear_botones()
 
+        ctk.CTkFrame(self.sidebar, height=2, fg_color=SEPARADOR).pack(fill="x", padx=20, pady=10)
+        btn_cerrar = ctk.CTkButton(
+            self.sidebar,
+            text="🚪 Cerrar Sesión",
+            font=("Inter", 13),
+            fg_color="transparent",
+            text_color=TEXTO_BLANCO,
+            hover_color=COLOR_ACENTO,
+            anchor="w",
+            command=self.cerrar_sesion
+        )
+        btn_cerrar.pack(fill="x", padx=10, pady=10)
+
+        # ===== ÁREA PRINCIPAL =====
         self.area_principal = ctk.CTkFrame(self.root, fg_color=FONDO_PRINCIPAL, corner_radius=0)
         self.area_principal.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
@@ -77,10 +90,10 @@ class MenuTaller:
     def _crear_botones(self):
         opciones = {
             "🏠 Inicio": self.mostrar_inicio,
+            "💰 Presupuestos": self.mostrar_presupuestos,
             "👥 Clientes": self.mostrar_clientes,
             "🚗 Vehículos": self.mostrar_vehiculos,
             "🛠️ Servicios/Reparaciones": self.mostrar_servicios,
-            "💰 Presupuestos": self.mostrar_presupuestos,
             "📦 Repuestos": self.mostrar_repuestos,
             "📊 Reportes/Auditoría": self.mostrar_reportes,
             "⚙️ Configuración": self.mostrar_config
@@ -89,7 +102,7 @@ class MenuTaller:
         if self.rol == "admin":
             permitidos = list(opciones.keys())
         elif self.rol == "secretaria":
-            permitidos = ["🏠 Inicio", "👥 Clientes", "🚗 Vehículos", "🛠️ Servicios/Reparaciones"]
+            permitidos = ["🏠 Inicio", "👥 Clientes", "🚗 Vehículos", "🛠️ Servicios/Reparaciones", "💰 Presupuestos"]
         elif self.rol == "mecanico":
             permitidos = ["🏠 Inicio", "🚗 Vehículos", "🛠️ Servicios/Reparaciones"]
         elif self.rol == "auditor":
@@ -128,7 +141,6 @@ class MenuTaller:
             clase(frame, self.rol, self.usuario_actual)
             frame.grid_remove()
 
-        # Frame de Inicio
         frame_inicio = ctk.CTkFrame(self.contenedor_modulos, fg_color=FONDO_PRINCIPAL)
         frame_inicio.grid(row=0, column=0, sticky="nsew")
         self.frames_modulos["inicio"] = frame_inicio
@@ -187,6 +199,9 @@ class MenuTaller:
 
         self._mostrar_modulo("inicio")
 
+    def mostrar_presupuestos(self):
+        self._mostrar_modulo("presupuestos")
+
     def mostrar_clientes(self):
         self._mostrar_modulo("clientes")
 
@@ -196,9 +211,6 @@ class MenuTaller:
     def mostrar_servicios(self):
         self._mostrar_modulo("servicios")
 
-    def mostrar_presupuestos(self):
-        self._mostrar_modulo("presupuestos")
-
     def mostrar_repuestos(self):
         self._mostrar_modulo("repuestos")
 
@@ -207,3 +219,8 @@ class MenuTaller:
 
     def mostrar_config(self):
         self._mostrar_modulo("configuracion")
+
+    def cerrar_sesion(self):
+        self.root.destroy()
+        import login
+        login.main()

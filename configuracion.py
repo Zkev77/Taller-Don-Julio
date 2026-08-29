@@ -29,10 +29,6 @@ class GestionConfiguracion:
         self.notebook.add(self.tab_usuarios, text="👤 Usuarios")
         self._crear_pestania_usuarios()
 
-        self.tab_password = ctk.CTkFrame(self.notebook, fg_color=FONDO_TARJETA)
-        self.notebook.add(self.tab_password, text="🔑 Cambiar Contraseña")
-        self._crear_pestania_password()
-
         self.tab_backup = ctk.CTkFrame(self.notebook, fg_color=FONDO_TARJETA)
         self.notebook.add(self.tab_backup, text="💾 Respaldos")
         self._crear_pestania_backup()
@@ -202,46 +198,6 @@ class GestionConfiguracion:
                     else:
                         messagebox.showerror("Error", mensaje)
     
-    def _crear_pestania_password(self):
-        frame = ctk.CTkFrame(self.tab_password, fg_color=FONDO_TARJETA)
-        frame.pack(pady=30)
-
-        ctk.CTkLabel(frame, text="🔐 Cambiar Contraseña", font=("Inter", 16, "bold"), text_color=TEXTO_BLANCO).pack(pady=10)
-        ctk.CTkLabel(frame, text="Usuario actual:", text_color=TEXTO_GRIS).pack(pady=5)
-        ctk.CTkLabel(frame, text=self.usuario_actual, font=("Inter", 12, "bold"), text_color=COLOR_ACENTO).pack(pady=5)
-        ctk.CTkLabel(frame, text="Nueva contraseña:", text_color=TEXTO_GRIS).pack(pady=5)
-        entry_nueva = ctk.CTkEntry(frame, width=250, show='*')
-        entry_nueva.pack(pady=5)
-        ctk.CTkLabel(frame, text="Confirmar contraseña:", text_color=TEXTO_GRIS).pack(pady=5)
-        entry_confirmar = ctk.CTkEntry(frame, width=250, show='*')
-        entry_confirmar.pack(pady=5)
-
-        def cambiar_password():
-            nueva = entry_nueva.get().strip()
-            confirmar = entry_confirmar.get().strip()
-            if not nueva:
-                messagebox.showerror("Error", "La nueva contraseña es obligatoria")
-                return
-            if nueva != confirmar:
-                messagebox.showerror("Error", "Las contraseñas no coinciden")
-                return
-            if len(nueva) < 4:
-                messagebox.showerror("Error", "La contraseña debe tener al menos 4 caracteres")
-                return
-            password_hash = hashlib.sha256(nueva.encode()).hexdigest()
-            exito, mensaje, _ = self.db.execute_query(
-                "UPDATE usuarios SET password=%s WHERE username=%s",
-                (password_hash, self.usuario_actual)
-            )
-            if exito:
-                messagebox.showinfo("Éxito", "Contraseña actualizada correctamente")
-                entry_nueva.delete(0, tk.END)
-                entry_confirmar.delete(0, tk.END)
-            else:
-                messagebox.showerror("Error", mensaje)
-
-        btn_guardar = ctk.CTkButton(frame, text="Actualizar Contraseña", fg_color=COLOR_VERDE, command=cambiar_password)
-        btn_guardar.pack(pady=20)
 
     def _crear_pestania_backup(self):
         frame = ctk.CTkFrame(self.tab_backup, fg_color=FONDO_TARJETA)
