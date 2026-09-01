@@ -3,6 +3,7 @@ import customtkinter as ctk
 from database import Database
 from interfaz import MenuTaller
 from colores_app import *
+from PIL import Image
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -31,13 +32,13 @@ def main():
     )
     frame_login.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.60, relheight=0.85)
 
-    ctk.CTkLabel(frame_login, text="🔧", font=("Segoe UI Emoji", 70)).pack(pady=(45, 10))
+    img_llave = ctk.CTkImage(Image.open("llave_inglesa.png"), size=(175, 175))
     ctk.CTkLabel(
         frame_login, 
-        text="Taller Don Julio", 
-        font=("Inter", 34, "bold"), 
-        text_color=("#1a1a2e", COLOR_ACENTO)
-    ).pack(pady=(0, 4))
+        text="",          
+        image=img_llave
+    ).pack(pady=(2, 2))
+
     ctk.CTkLabel(
         frame_login, 
         text="Sistema de Gestión Operativa", 

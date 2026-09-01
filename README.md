@@ -28,7 +28,7 @@
 
 ## 1. INTRODUCCIÓN Y OBJETIVOS
 
-El **Sistema de Gestión Operativa Taller Don Julio** es una solución de software de escritorio desarrollada en Python con interfaz gráfica moderna (**CustomTkinter**) y persistencia de datos relacional en **MySQL**.
+El **Sistema de Gestión Operativa Taller Don Julio** es un software de escritorio desarrollado en Python con interfaz gráfica moderna (**CustomTkinter**) y persistencia de datos relacional en **MySQL**.
 
 ### Objetivos Principales:
 * Centralizar el registro de clientes, vehículos y la trazabilidad de reparaciones.
@@ -56,6 +56,8 @@ El **Sistema de Gestión Operativa Taller Don Julio** es una solución de softwa
 * `pillow`
 * `mysql-connector-python`
 * `reportlab`
+* `matplotlib`
+* `python-dotenv`
 
 ---
 
@@ -84,7 +86,7 @@ Esto creará la base de datos `taller`, las tablas principales (`usuarios`, `cli
 
 ### 4.1 Inicio de Sesión y Roles
 
-1. Ejecute la aplicación iniciando `python main.py` (o mediante el módulo de interfaz correspondiente).
+1. Ejecute la aplicación iniciando `python login.py`.
 2. Ingrese su **Nombre de Usuario** y **Contraseña**.
 
 #### Roles de Usuario y Accesos:

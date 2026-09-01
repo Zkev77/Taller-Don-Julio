@@ -33,11 +33,16 @@ class MenuTaller:
         self.sidebar = ctk.CTkFrame(self.root, fg_color=FONDO_SIDEBAR, width=220, corner_radius=0)
         self.sidebar.pack(side="left", fill="y")
 
+        img_auto = Image.open("carro.png")  
+        img_auto_ctk = ctk.CTkImage(light_image=img_auto, dark_image=img_auto, size=(50, 50)) 
+
         self.lbl_titulo = ctk.CTkLabel(
             self.sidebar,
             text="TALLER\nDON JULIO",
             font=("Inter", 18, "bold"),
-            text_color=COLOR_ACENTO
+            text_color=COLOR_ACENTO,
+            image=img_auto_ctk,
+            compound="left"
         )
         self.lbl_titulo.pack(pady=(30, 10))
 
