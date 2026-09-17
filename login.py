@@ -1,9 +1,12 @@
 import tkinter as tk
 import customtkinter as ctk
+import os
 from database import Database
 from interfaz import MenuTaller
 from colores_app import *
 from PIL import Image
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -32,7 +35,7 @@ def main():
     )
     frame_login.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.60, relheight=0.85)
 
-    img_llave = ctk.CTkImage(Image.open("llave_inglesa.png"), size=(175, 175))
+    img_llave = ctk.CTkImage(Image.open(os.path.join(BASE_DIR, "llave_inglesa.png")), size=(175, 175))
     ctk.CTkLabel(
         frame_login, 
         text="",          

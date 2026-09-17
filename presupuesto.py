@@ -87,7 +87,7 @@ class GestionPresupuestos:
             JOIN vehiculos v ON o.vehiculo_id = v.id
             JOIN clientes c ON v.cliente_id = c.id
             LEFT JOIN pagos p ON o.id = p.orden_id
-            GROUP BY o.id
+            GROUP BY o.id, c.nombre, v.marca, v.modelo, o.total_orden_usd
             ORDER BY o.id DESC
         """
         ordenes = self.db.fetch_all(query)

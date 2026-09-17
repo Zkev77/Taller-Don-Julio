@@ -16,11 +16,14 @@ class Database:
     def _load_config(self):
         load_dotenv()
         self.host = os.getenv('DB_HOST', 'localhost')
-        self.user = os.getenv('DB_USER', 'developer')
-        self.password = os.getenv('DB_PASSWORD', 'Taller2026')
+        self.user = os.getenv('DB_USER', '')
+        self.password = os.getenv('DB_PASSWORD', '')
         self.database = os.getenv('DB_NAME', 'taller')
 
     def get_connection(self):
+        if not self.user or not self.password:
+            print("Error de configuración: defina DB_USER y DB_PASSWORD en el archivo .env")
+            return None
         try:
             return mysql.connector.connect(
                 host=self.host,
@@ -333,22 +336,29 @@ class Database:
                 o.descripcion, 
                 o.estado, 
                 COALESCE(o.total_orden_usd, 0) as total_orden_usd,
-                COALESCE(SUM(p.monto_ref_usd), 0) as total_pagado
+                COALESCE(SUM(p.monto_ref_usd), 0) as total_pagado,
+                c.nombre AS cliente_nombre,
+                CONCAT(v.marca, ' ', v.modelo, ' (', v.placa, ')') AS vehiculo
             FROM ordenes o
+            JOIN vehiculos v ON o.vehiculo_id = v.id
+            JOIN clientes c ON v.cliente_id = c.id
             LEFT JOIN pagos p ON o.id = p.orden_id
             WHERE o.id = %s
-            GROUP BY o.id
+            GROUP BY o.id, o.descripcion, o.estado, o.total_orden_usd,
+                     c.nombre, v.marca, v.modelo, v.placa
         """
         res = self.fetch_all(query, (id_orden,))
         if res:
             return res[0]
-        # Si no encuentra la orden, devolver un diccionario vacío con valores por defecto
+        # Si no encuentra la orden, devolver un diccionario con valores por defecto
         return {
             'id': id_orden,
             'descripcion': 'Orden no encontrada',
             'estado': 'Desconocido',
             'total_orden_usd': 0,
-            'total_pagado': 0
+            'total_pagado': 0,
+            'cliente_nombre': 'N/A',
+            'vehiculo': 'N/A'
         }
 
     def listar_pagos_por_orden(self, id_orden):

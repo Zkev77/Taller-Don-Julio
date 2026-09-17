@@ -1,3 +1,4 @@
+import os
 import customtkinter as ctk
 from clientes import GestionClientes
 from vehiculos import GestionVehiculos
@@ -10,6 +11,8 @@ from database import Database
 from colores_app import *
 from pytablericons import TablerIcons, OutlineIcon
 from PIL import Image
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class MenuTaller:
     def __init__(self, root, rol, usuario_actual):
@@ -33,7 +36,7 @@ class MenuTaller:
         self.sidebar = ctk.CTkFrame(self.root, fg_color=FONDO_SIDEBAR, width=220, corner_radius=0)
         self.sidebar.pack(side="left", fill="y")
 
-        img_auto = Image.open("carro.png")  
+        img_auto = Image.open(os.path.join(BASE_DIR, "carro.png"))  
         img_auto_ctk = ctk.CTkImage(light_image=img_auto, dark_image=img_auto, size=(50, 50)) 
 
         self.lbl_titulo = ctk.CTkLabel(
@@ -137,7 +140,9 @@ class MenuTaller:
         elif self.rol == "mecanico":
             permitidos = ["Inicio", "Vehículos", "Servicios/Reparaciones"]
         elif self.rol == "auditor":
-            permitidos = ["Inicio", "Reportes/Auditoría", "Configuración"]
+            permitidos = ["Inicio", "Presupuestos", "Clientes", "Vehículos",
+                          "Servicios/Reparaciones", "Repuestos",
+                          "Reportes/Auditoría", "Configuración"]
         else:
             permitidos = ["Inicio"]
 
@@ -163,7 +168,7 @@ class MenuTaller:
             btn.pack(fill="x", padx=10, pady=5)
 
     def _crear_modulos(self):
-        modulos = {
+        self.modulos_clases = {
             "clientes": GestionClientes,
             "vehiculos": GestionVehiculos,
             "servicios": GestionServicios,
@@ -173,15 +178,8 @@ class MenuTaller:
             "presupuestos": GestionPresupuestos
         }
 
-        for nombre, clase in modulos.items():
-            frame = ctk.CTkFrame(self.contenedor_modulos, fg_color=FONDO_PRINCIPAL)
-            frame.grid(row=0, column=0, sticky="nsew")
-            self.frames_modulos[nombre] = frame
-            clase(frame, self.rol, self.usuario_actual)
-            frame.grid_remove()
-
         frame_inicio = ctk.CTkFrame(self.contenedor_modulos, fg_color=FONDO_PRINCIPAL)
-        frame_inicio.grid(row=0, column=0, sticky="nsew")
+        frame_inicio.place(x=0, y=0, relwidth=1, relheight=1)
         self.frames_modulos["inicio"] = frame_inicio
 
         ctk.CTkLabel(
@@ -216,18 +214,22 @@ class MenuTaller:
         )
         self.lbl_stats.pack(pady=15)
 
-        frame_inicio.grid_remove()
+    def _obtener_frame_modulo(self, nombre):
+        """Crea el módulo la primera vez que se abre (carga diferida)."""
+        if nombre not in self.frames_modulos:
+            frame = ctk.CTkFrame(self.contenedor_modulos, fg_color=FONDO_PRINCIPAL)
+            clase = self.modulos_clases.get(nombre)
+            if clase:
+                clase(frame, self.rol, self.usuario_actual)
+            frame.place(x=0, y=0, relwidth=1, relheight=1)
+            self.frames_modulos[nombre] = frame
+        return self.frames_modulos[nombre]
 
     def _mostrar_modulo(self, nombre_frame):
         if self.modulo_actual == nombre_frame:
             return
 
-        self.root.update()
-
-        if self.modulo_actual:
-            self.frames_modulos[self.modulo_actual].grid_remove()
-
-        self.frames_modulos[nombre_frame].grid()
+        self._obtener_frame_modulo(nombre_frame).tkraise()
         self.modulo_actual = nombre_frame
 
     def mostrar_inicio(self):

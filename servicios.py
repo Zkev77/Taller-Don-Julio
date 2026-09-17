@@ -61,6 +61,7 @@ class GestionServicios:
 
         if self.rol == 'auditor':
             self.btn_nuevo.configure(state="disabled")
+            self.btn_registrar_pago.configure(state="disabled")
             self.btn_cambiar_estado.configure(state="disabled")
             self.btn_eliminar.configure(state="disabled")
         elif self.rol == 'mecanico':
@@ -399,7 +400,7 @@ class GestionServicios:
                 p['referencia'] or ""
             ))
 
-        if self.rol in ['admin', 'secretaria', 'auditor'] and saldo > 0:
+        if self.rol in ['admin', 'secretaria'] and saldo > 0:
             form_frame = ctk.CTkFrame(frame_pagos, fg_color=FONDO_SIDEBAR, corner_radius=10)
             form_frame.pack(fill="x", pady=5)
 
