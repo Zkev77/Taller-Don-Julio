@@ -168,7 +168,7 @@ class GestionClientes:
         frame_telefono = ctk.CTkFrame(frame, fg_color="transparent")
         frame_telefono.grid(row=3, column=1, padx=10, pady=10, sticky="w")
 
-        prefijos = ['0412', '0414', '0416', '0424', '0426', '0410']
+        prefijos = ['0412', '0414', '0416', '0424', '0426']
         combo_prefijo = ctk.CTkComboBox(frame_telefono, values=prefijos, width=80, state="readonly")
         combo_prefijo.pack(side="left", padx=(0, 5))
         combo_prefijo.set('0412')

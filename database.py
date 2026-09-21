@@ -246,16 +246,29 @@ class Database:
         exito, mensaje, _ = self.execute_query(query, (cantidad, id_repuesto))
         return exito, mensaje
 
+    def incrementar_stock(self, id_repuesto, cantidad):
+        query = "UPDATE repuestos SET stock = stock + %s WHERE id = %s"
+        exito, mensaje, _ = self.execute_query(query, (cantidad, id_repuesto))
+        return exito, mensaje
+
     def listar_repuestos_por_orden(self, id_orden):
         query = """
-            SELECT r.id, r.nombre, orp.cantidad, orp.precio_unitario
+            SELECT orp.id AS orden_repuesto_id, r.id AS repuesto_id, r.nombre,
+                   orp.cantidad, orp.precio_unitario,
+                   (orp.cantidad * orp.precio_unitario) AS subtotal
             FROM orden_repuestos orp
             JOIN repuestos r ON orp.repuesto_id = r.id
             WHERE orp.orden_id = %s
+            ORDER BY orp.id
         """
-        return self.fetch_all(query)
+        return self.fetch_all(query, (id_orden,))
 
     def agregar_repuesto_a_orden(self, orden_id, repuesto_id, cantidad, precio_unitario):
+        repuesto = self.obtener_repuesto_por_id(repuesto_id)
+        if not repuesto:
+            return False, "Repuesto no encontrado"
+        if repuesto['stock'] < cantidad:
+            return False, f"Stock insuficiente (disponible: {repuesto['stock']})"
         exito, mensaje, _ = self.execute_query(
             "INSERT INTO orden_repuestos (orden_id, repuesto_id, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
             (orden_id, repuesto_id, cantidad, precio_unitario)
@@ -263,6 +276,32 @@ class Database:
         if exito:
             self.actualizar_stock(repuesto_id, cantidad)
         return exito, mensaje
+
+    def eliminar_orden_repuesto(self, orden_repuesto_id):
+        query = "DELETE FROM orden_repuestos WHERE id=%s"
+        exito, mensaje, _ = self.execute_query(query, (orden_repuesto_id,))
+        return exito, mensaje
+
+    def registrar_movimiento(self, repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre):
+        query = """
+            INSERT INTO movimientos_inventario (repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        exito, mensaje, _ = self.execute_query(
+            query, (repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre)
+        )
+        return exito, mensaje
+
+    def listar_movimientos(self, limite=200):
+        query = """
+            SELECT m.id, r.nombre AS repuesto, m.tipo, m.cantidad, m.motivo,
+                   m.usuario_nombre, m.fecha_hora
+            FROM movimientos_inventario m
+            JOIN repuestos r ON m.repuesto_id = r.id
+            ORDER BY m.fecha_hora DESC
+            LIMIT %s
+        """
+        return self.fetch_all(query, (limite,))
 
     def registrar_log(self, usuario_id, usuario_nombre, tabla, registro_id, accion, descripcion=""):
         query = """

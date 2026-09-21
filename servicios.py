@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from tkinter import ttk, messagebox
 from database import Database
+from utilidades import formatear_fecha
 from colores_app import *
 
 class GestionServicios:
@@ -107,7 +108,7 @@ class GestionServicios:
         ordenes = self.db.listar_ordenes_completas()
         if ordenes:
             for o in ordenes:
-                fecha = o['fecha'].strftime("%d/%m/%Y %H:%M") if o['fecha'] else ""
+                fecha = formatear_fecha(o['fecha'])
                 self.tree.insert("", "end", values=(
                     o['id'],
                     fecha,
@@ -183,24 +184,27 @@ class GestionServicios:
                 messagebox.showerror("Error", "Vehículo no válido", parent=ventana)
                 return
 
-            exito, mensaje, nuevo_id = self.db.crear_orden(vehiculo_id, descripcion, "Ingresado")
-            if exito:
-                self.db.execute_query("UPDATE ordenes SET total_orden_usd = %s WHERE id = %s", (total_orden, nuevo_id))
-                self.db.registrar_log(
-                    usuario_id=self.usuario_id,
-                    usuario_nombre=self.usuario_actual,
-                    tabla="ordenes",
-                    registro_id=nuevo_id,
-                    accion="INSERT",
-                    descripcion=f"Nueva orden: {descripcion[:50]}... (Total: ${total_orden:.2f} USD)"
-                )
-                messagebox.showinfo("Éxito", "Orden creada correctamente", parent=ventana)
-                ventana.destroy()
-                self.cargar_datos()
-                self.tree.update_idletasks()
-                self.tree.update()
-            else:
-                messagebox.showerror("Error", mensaje, parent=ventana)
+            try:
+                exito, mensaje, nuevo_id = self.db.crear_orden(vehiculo_id, descripcion, "Ingresado")
+                if exito:
+                    self.db.execute_query("UPDATE ordenes SET total_orden_usd = %s WHERE id = %s", (total_orden, nuevo_id))
+                    self.db.registrar_log(
+                        usuario_id=self.usuario_id,
+                        usuario_nombre=self.usuario_actual,
+                        tabla="ordenes",
+                        registro_id=nuevo_id,
+                        accion="INSERT",
+                        descripcion=f"Nueva orden: {descripcion[:50]}... (Total: ${total_orden:.2f} USD)"
+                    )
+                    messagebox.showinfo("Éxito", "Orden creada correctamente", parent=ventana)
+                    ventana.destroy()
+                    self.cargar_datos()
+                    self.tree.update_idletasks()
+                    self.tree.update()
+                else:
+                    messagebox.showerror("Error", mensaje, parent=ventana)
+            except Exception as e:
+                messagebox.showerror("Error", f"Error inesperado al guardar la orden: {e}", parent=ventana)
 
         btn_guardar = ctk.CTkButton(frame, text="Crear Orden", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=guardar)
         btn_guardar.grid(row=3, column=0, columnspan=2, pady=20)
@@ -347,6 +351,7 @@ class GestionServicios:
 
         tab_info = tabview.add("📋 Información")
         tab_pagos = tabview.add("💰 Pagos")
+        tab_repuestos = tabview.add("🔧 Repuestos")
 
         frame_info = ctk.CTkFrame(tab_info, fg_color=FONDO_TARJETA)
         frame_info.pack(fill="both", expand=True, padx=10, pady=10)
@@ -395,7 +400,7 @@ class GestionServicios:
                 p['moneda'],
                 f"{p['tasa_cambio']:.2f}",
                 f"{p['monto_ref_usd']:.2f}",
-                p['fecha_pago'].strftime("%d/%m/%Y %H:%M"),
+                formatear_fecha(p['fecha_pago']),
                 p['metodo_pago'],
                 p['referencia'] or ""
             ))
@@ -480,8 +485,164 @@ class GestionServicios:
         elif saldo <= 0:
             ctk.CTkLabel(frame_pagos, text="✅ Esta orden está completamente pagada", text_color=COLOR_VERDE, font=("Inter", 12, "bold")).pack(pady=10)
 
+        self._construir_tab_repuestos(tab_repuestos, id_orden, ventana)
+
         btn_cerrar = ctk.CTkButton(frame_pagos, text="Cerrar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO, command=ventana.destroy)
         btn_cerrar.pack(pady=10)
+
+    def _construir_tab_repuestos(self, tab, id_orden, ventana):
+        frame = ctk.CTkFrame(tab, fg_color=FONDO_TARJETA)
+        frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        resumen = ctk.CTkFrame(frame, fg_color=FONDO_SIDEBAR, corner_radius=10)
+        resumen.pack(fill="x", pady=5)
+        lbl_subtotal = ctk.CTkLabel(
+            resumen, text="Repuestos: $0.00 USD",
+            font=("Inter", 12, "bold"), text_color=TEXTO_BLANCO
+        )
+        lbl_subtotal.pack(side="left", padx=15, pady=5)
+
+        puede_editar = self.rol in ['admin', 'secretaria']
+
+        combo_repuesto = None
+        entry_cantidad = None
+        entry_precio = None
+        rep_map = {}
+        nombres = []
+
+        if puede_editar:
+            form = ctk.CTkFrame(frame, fg_color=FONDO_SIDEBAR, corner_radius=10)
+            form.pack(side="bottom", fill="x", pady=5)
+
+            ctk.CTkLabel(form, text="Repuesto:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=5, pady=5, sticky="e")
+            combo_repuesto = ctk.CTkComboBox(form, values=[], width=260, state="readonly")
+            combo_repuesto.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+            ctk.CTkLabel(form, text="Cantidad:", text_color=TEXTO_BLANCO).grid(row=0, column=2, padx=5, pady=5, sticky="e")
+            entry_cantidad = ctk.CTkEntry(form, width=80)
+            entry_cantidad.grid(row=0, column=3, padx=5, pady=5, sticky="w")
+
+            ctk.CTkLabel(form, text="Precio USD:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=5, pady=5, sticky="e")
+            entry_precio = ctk.CTkEntry(form, width=100)
+            entry_precio.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+
+            btn_agregar = ctk.CTkButton(form, text="+ Agregar", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, width=120)
+            btn_agregar.grid(row=1, column=2, padx=5, pady=5)
+            btn_quitar = ctk.CTkButton(form, text="🗑 Quitar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO, width=120)
+            btn_quitar.grid(row=1, column=3, padx=5, pady=5)
+
+        tree_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        tree_frame.pack(fill="both", expand=True, pady=5)
+
+        tree = ttk.Treeview(
+            tree_frame,
+            columns=("ID", "Repuesto", "Cantidad", "Precio", "Subtotal"),
+            show="headings"
+        )
+        for col, width in [("ID", 50), ("Repuesto", 240), ("Cantidad", 80), ("Precio", 100), ("Subtotal", 100)]:
+            tree.heading(col, text=col)
+            tree.column(col, width=width, anchor="w" if col == "Repuesto" else "center")
+
+        scroll = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scroll.set)
+        tree.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+
+        def recargar_combo():
+            nonlocal rep_map, nombres
+            repuestos = self.db.listar_repuestos() or []
+            rep_map = {f"{r['nombre']} (stock: {r['stock']})": r for r in repuestos}
+            nombres = list(rep_map.keys())
+            if combo_repuesto is not None:
+                combo_repuesto.configure(values=nombres)
+
+        def cargar():
+            for row in tree.get_children():
+                tree.delete(row)
+            items = self.db.listar_repuestos_por_orden(id_orden) or []
+            total = 0.0
+            for it in items:
+                total += float(it['subtotal'] or 0)
+                tree.insert("", "end", iid=str(it['orden_repuesto_id']), values=(
+                    it['repuesto_id'],
+                    it['nombre'],
+                    it['cantidad'],
+                    f"${it['precio_unitario']:.2f}",
+                    f"${it['subtotal']:.2f}"
+                ))
+            lbl_subtotal.configure(text=f"Repuestos: ${total:.2f} USD")
+
+        def al_elegir(choice):
+            rep = rep_map.get(choice)
+            if rep and entry_precio is not None:
+                entry_precio.delete(0, ctk.END)
+                entry_precio.insert(0, f"{float(rep['precio']):.2f}")
+
+        if puede_editar:
+            combo_repuesto.configure(command=al_elegir)
+
+            def agregar():
+                rep = rep_map.get(combo_repuesto.get())
+                if not rep:
+                    messagebox.showerror("Error", "Seleccione un repuesto", parent=ventana)
+                    return
+                try:
+                    cantidad = int(entry_cantidad.get().strip() or "0")
+                    precio = float(entry_precio.get().strip() or "0")
+                except ValueError:
+                    messagebox.showerror("Error", "Cantidad y precio deben ser números válidos", parent=ventana)
+                    return
+                if cantidad <= 0:
+                    messagebox.showerror("Error", "La cantidad debe ser mayor a 0", parent=ventana)
+                    return
+
+                exito, mensaje = self.db.agregar_repuesto_a_orden(id_orden, rep['id'], cantidad, precio)
+                if not exito:
+                    messagebox.showerror("Error", mensaje, parent=ventana)
+                    return
+
+                self.db.registrar_movimiento(rep['id'], "SALIDA", cantidad,
+                                             f"Usado en orden #{id_orden}", self.usuario_id, self.usuario_actual)
+                self.db.registrar_log(self.usuario_id, self.usuario_actual, "orden_repuestos", id_orden,
+                                      "INSERT", f"Repuesto '{rep['nombre']}' x{cantidad} en orden #{id_orden}")
+                entry_cantidad.delete(0, ctk.END)
+                entry_precio.delete(0, ctk.END)
+                combo_repuesto.set("")
+                recargar_combo()
+                cargar()
+
+            def quitar():
+                seleccion = tree.selection()
+                if not seleccion:
+                    messagebox.showwarning("Seleccionar", "Seleccione un repuesto de la lista", parent=ventana)
+                    return
+                orp_id = int(seleccion[0])
+                valores = tree.item(seleccion[0])['values']
+                repuesto_id = int(float(valores[0]))
+                nombre = valores[1]
+                cantidad = int(float(valores[2]))
+
+                if not messagebox.askyesno("Confirmar", f"¿Quitar '{nombre}' de la orden? Se devolverá al stock.", parent=ventana):
+                    return
+
+                exito, mensaje = self.db.eliminar_orden_repuesto(orp_id)
+                if not exito:
+                    messagebox.showerror("Error", mensaje, parent=ventana)
+                    return
+
+                self.db.incrementar_stock(repuesto_id, cantidad)
+                self.db.registrar_movimiento(repuesto_id, "ENTRADA", cantidad,
+                                             f"Devuelto de orden #{id_orden}", self.usuario_id, self.usuario_actual)
+                self.db.registrar_log(self.usuario_id, self.usuario_actual, "orden_repuestos", id_orden,
+                                      "DELETE", f"Repuesto '{nombre}' x{cantidad} quitado de orden #{id_orden}")
+                recargar_combo()
+                cargar()
+
+            btn_agregar.configure(command=agregar)
+            btn_quitar.configure(command=quitar)
+
+        recargar_combo()
+        cargar()
 
     def cambiar_estado(self):
         id_orden = self.obtener_seleccionado()

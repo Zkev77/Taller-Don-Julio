@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS taller;
 CREATE DATABASE taller CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE taller;
 
@@ -76,6 +77,19 @@ CREATE TABLE logs_auditoria (
     accion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
     descripcion TEXT,
     fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE movimientos_inventario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    repuesto_id INT NOT NULL,
+    tipo ENUM('ENTRADA', 'SALIDA') NOT NULL,
+    cantidad INT NOT NULL,
+    motivo VARCHAR(150),
+    usuario_id INT,
+    usuario_nombre VARCHAR(50),
+    fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (repuesto_id) REFERENCES repuestos(id) ON DELETE CASCADE,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 

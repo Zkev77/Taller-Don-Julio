@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from tkinter import ttk, messagebox
 from database import Database
+from utilidades import formatear_fecha
 from colores_app import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -160,7 +161,7 @@ class GestionPresupuestos:
                 p['moneda'],
                 f"{p['tasa_cambio']:.2f}",
                 f"{p['monto_ref_usd']:.2f}",
-                p['fecha_pago'].strftime("%d/%m/%Y %H:%M"),
+                formatear_fecha(p["fecha_pago"]),
                 p['metodo_pago'],
                 p['referencia'] or ""
             ))
@@ -297,7 +298,7 @@ class GestionPresupuestos:
                         p['moneda'],
                         f"{p['tasa_cambio']:.2f}",
                         f"{p['monto_ref_usd']:.2f}",
-                        p['fecha_pago'].strftime("%d/%m/%Y %H:%M"),
+                        formatear_fecha(p["fecha_pago"]),
                         p['metodo_pago'],
                         p['referencia'] or ""
                     ))

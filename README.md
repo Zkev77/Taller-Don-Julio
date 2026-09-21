@@ -212,6 +212,7 @@ Esto creará la base de datos `taller` con las siguientes tablas:
 - `orden_repuestos`: relación entre órdenes y repuestos utilizados.
 - `pagos`: registro de pagos en múltiples monedas.
 - `logs_auditoria`: trazabilidad de todas las operaciones.
+- `movimientos_inventario`: entradas y salidas de repuestos con usuario y fecha.
 
 ---
 
@@ -322,7 +323,7 @@ Permite registrar, consultar, editar y eliminar vehículos asociados a clientes.
 
 ### Servicios y Reparaciones
 
-Módulo central del sistema. Permite crear órdenes, describir fallas, asignar total en USD, cambiar el estado (Ingresado, Revisión, Trabajando, Completado, Entregado) y registrar pagos en múltiples monedas.
+Módulo central del sistema. Permite crear órdenes, describir fallas, asignar total en USD, cambiar el estado (Ingresado, Revisión, Trabajando, Completado, Entregado) y registrar pagos en múltiples monedas. Al abrir el detalle de una orden incluye una pestaña de **Repuestos** donde se agregan o quitan los repuestos usados, descontando y devolviendo el stock automáticamente.
 
 ### Presupuestos
 
@@ -330,7 +331,14 @@ Panel de control financiero. Muestra cuentas por cobrar, historial de pagos y gr
 
 ### Repuestos
 
-Permite gestionar el inventario de repuestos del taller con control de stock.
+Permite gestionar el inventario de repuestos del taller con control de stock. Incluye:
+
+- Alta, edición y eliminación de repuestos.
+- Buscador por nombre o proveedor.
+- Resaltado y alerta de repuestos con stock bajo (menos de 5 unidades).
+- Botón para reponer stock.
+- Exportación del inventario a PDF.
+- Historial de movimientos de inventario (entradas y salidas) con usuario y fecha.
 
 ### Reportes y Auditoría
 

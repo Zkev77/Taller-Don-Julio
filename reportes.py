@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from tkinter import ttk, messagebox
 from database import Database
+from utilidades import formatear_fecha
 from colores_app import *
 
 class GestionReportes:
@@ -93,7 +94,7 @@ class GestionReportes:
                 log['registro_id'],
                 accion_mostrada,
                 log['descripcion'][:60] + ("..." if len(log['descripcion'] or '') > 60 else ""),
-                log['fecha_hora'].strftime("%d/%m/%Y %H:%M") if log['fecha_hora'] else ""
+                formatear_fecha(log["fecha_hora"])
             ))
         self.tree.update_idletasks()
 
