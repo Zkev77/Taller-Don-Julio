@@ -154,8 +154,17 @@ class GestionServicios:
         txt_descripcion = ctk.CTkTextbox(frame, width=350, height=120)
         txt_descripcion.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
+        def solo_numeros_y_punto(caracter, texto_actual, max_len):
+            if caracter == '':
+                return True
+            if (caracter.isdigit() or caracter == '.') and len(texto_actual) <= max_len:
+                return True
+            return False
+
+        vcmd_total = ventana.register(lambda c, t: solo_numeros_y_punto(c, t, 10))
+
         ctk.CTkLabel(frame, text="Total Orden (USD):", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
-        entry_total = ctk.CTkEntry(frame, width=150)
+        entry_total = ctk.CTkEntry(frame, width=150, validate="key", validatecommand=(vcmd_total, '%S', '%P'))
         entry_total.grid(row=2, column=1, padx=10, pady=10, sticky="w")
         entry_total.insert(0, "0.00")
 
