@@ -1,6 +1,9 @@
 import tkinter as tk
 import customtkinter as ctk
 import os
+import sys
+import traceback
+import datetime
 from database import Database
 from interfaz import MenuTaller
 from colores_app import *
@@ -11,11 +14,33 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-def maximizar_ventana(ventana):
+def registrar_error(tipo, valor, tb):
+    mensaje = "".join(traceback.format_exception(tipo, valor, tb))
     try:
-        ventana.attributes('-zoomed', True)
+        with open(os.path.join(BASE_DIR, "error.log"), "a", encoding="utf-8") as f:
+            f.write(f"[{datetime.datetime.now():%d/%m/%Y %H:%M:%S}]\n{mensaje}\n")
     except Exception:
+        pass
+    return mensaje
+
+def alertar_error(tipo, valor, tb):
+    mensaje = registrar_error(tipo, valor, tb)
+    try:
+        tk.messagebox.showerror("Error inesperado", f"{tipo.__name__}: {valor}\n\nSe guardaron los detalles en error.log")
+    except Exception:
+        pass
+
+def maximizar_ventana(ventana):
+    if sys.platform == "linux":
+        try:
+            ventana.attributes('-zoomed', True)
+            return
+        except Exception:
+            pass
+    try:
         ventana.state('zoomed')
+    except Exception:
+        pass
 
 def main():
     ctk.set_appearance_mode("dark")
@@ -23,7 +48,11 @@ def main():
 
     root = ctk.CTk()
     root.title("Taller Don Julio - Acceso")
-    maximizar_ventana(root)
+
+    root.report_callback_exception = lambda tipo, valor, tb: alertar_error(tipo, valor, tb)
+    sys.excepthook = lambda tipo, valor, tb: alertar_error(tipo, valor, tb)
+
+    root.after(80, maximizar_ventana, root)
     root.minsize(1024, 700)
 
     frame_login = ctk.CTkFrame(
@@ -47,7 +76,7 @@ def main():
         text="Sistema de Gestión Operativa", 
         font=("Inter", 17), 
         text_color=("gray40", TEXTO_GRIS)
-    ).pack(pady=(0, 35))
+    ).pack(pady=(0, 35))  
 
     def limpiar_error(e=None):
         label_error.configure(text="")

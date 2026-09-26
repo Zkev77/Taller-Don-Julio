@@ -1,4 +1,5 @@
 import os
+import sys
 import customtkinter as ctk
 from clientes import GestionClientes
 from vehiculos import GestionVehiculos
@@ -9,7 +10,6 @@ from configuracion import GestionConfiguracion
 from presupuesto import GestionPresupuestos
 from database import Database
 from colores_app import *
-from pytablericons import TablerIcons, OutlineIcon
 from PIL import Image
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,7 +23,6 @@ class MenuTaller:
         self.usuario_actual = usuario_actual
         self.root.title("Taller Don Julio - Sistema de Gestión Operativa")
 
-        self._maximizar_ventana()
         self.root.minsize(1024, 600)
         self.root.configure(bg=FONDO_PRINCIPAL)
 
@@ -51,17 +50,12 @@ class MenuTaller:
 
         ctk.CTkFrame(self.sidebar, height=2, fg_color=SEPARADOR).pack(fill="x", padx=20, pady=10)
 
-        icon_user = TablerIcons.load(OutlineIcon.USER, size=20, color=TEXTO_GRIS)
-        icon_user_ctk = ctk.CTkImage(light_image=icon_user, dark_image=icon_user, size=(40, 40))
-
         self.lbl_usuario = ctk.CTkLabel(
             self.sidebar,
-            text=f" {self.usuario_actual}\n({self.rol.upper()})",
+            text=f" 👤 {self.usuario_actual}\n({self.rol.upper()})",
             font=("Inter", 12),
             text_color=TEXTO_GRIS,
-            justify="left",
-            image=icon_user_ctk,
-            compound="left"
+            justify="left"
         )
         self.lbl_usuario.pack(pady=(10, 20))
 
@@ -72,7 +66,7 @@ class MenuTaller:
         ctk.CTkFrame(self.sidebar, height=2, fg_color=SEPARADOR).pack(fill="x", padx=20, pady=10)
         btn_cerrar = ctk.CTkButton(
             self.sidebar,
-            text=" Cerrar Sesión",
+            text=" ↩ Cerrar Sesión",
             font=("Inter", 13),
             fg_color="transparent",
             text_color=TEXTO_BLANCO,
@@ -80,10 +74,6 @@ class MenuTaller:
             anchor="w",
             command=self.cerrar_sesion
         )
-
-        icon_logout = TablerIcons.load(OutlineIcon.LOGOUT, size=20, color=TEXTO_BLANCO)
-        icon_logout_ctk = ctk.CTkImage(light_image=icon_logout, dark_image=icon_logout, size=(20, 20))
-        btn_cerrar.configure(image=icon_logout_ctk, compound="left")
         btn_cerrar.pack(fill="x", padx=10, pady=10)
 
         self.area_principal = ctk.CTkFrame(self.root, fg_color=FONDO_PRINCIPAL, corner_radius=0)
@@ -98,17 +88,19 @@ class MenuTaller:
         self._crear_modulos()
         self.mostrar_inicio()
         self.root.deiconify()
-
-    def _crear_icono(self, icono_enum, size=20, color=TEXTO_BLANCO):
-        """Carga un icono de TablerIcons y lo convierte a CTkImage."""
-        img = TablerIcons.load(icono_enum, size=size, color=color)
-        return ctk.CTkImage(light_image=img, dark_image=img, size=(size, size))
+        self.root.after(80, self._maximizar_ventana)
 
     def _maximizar_ventana(self):
+        if sys.platform == "linux":
+            try:
+                self.root.attributes('-zoomed', True)
+                return
+            except Exception:
+                pass
         try:
-            self.root.attributes('-zoomed', True)
-        except Exception:
             self.root.state('zoomed')
+        except Exception:
+            pass
 
     def _crear_botones(self):
         opciones = {
@@ -122,15 +114,15 @@ class MenuTaller:
             "Configuración": self.mostrar_config
         }
 
-        iconos = {
-            "Inicio": OutlineIcon.HOME,
-            "Presupuestos": OutlineIcon.COINS,
-            "Clientes": OutlineIcon.USERS,
-            "Vehículos": OutlineIcon.CAR,
-            "Servicios/Reparaciones": OutlineIcon.TOOLS,
-            "Repuestos": OutlineIcon.BOX,
-            "Reportes/Auditoría": OutlineIcon.FILE_REPORT,
-            "Configuración": OutlineIcon.SETTINGS
+        emojis = {
+            "Inicio": "🏠",
+            "Presupuestos": "💰",
+            "Clientes": "👥",
+            "Vehículos": "🚗",
+            "Servicios/Reparaciones": "🔧",
+            "Repuestos": "📦",
+            "Reportes/Auditoría": "📊",
+            "Configuración": "⚙"
         }
 
         if self.rol == "admin":
@@ -147,15 +139,10 @@ class MenuTaller:
             permitidos = ["Inicio"]
 
         for texto in permitidos:
-            icono_enum = iconos.get(texto)
-            icono_ctk = None
-            if icono_enum:
-                img = TablerIcons.load(icono_enum, size=20, color=TEXTO_BLANCO)
-                icono_ctk = ctk.CTkImage(light_image=img, dark_image=img, size=(20, 20))
-
+            emoji = emojis.get(texto, "")
             btn = ctk.CTkButton(
                 self.sidebar,
-                text=f" {texto}",
+                text=f" {emoji} {texto}",
                 font=("Inter", 13),
                 fg_color="transparent",
                 text_color=TEXTO_BLANCO,
@@ -163,8 +150,6 @@ class MenuTaller:
                 anchor="w",
                 command=opciones[texto]
             )
-            if icono_ctk:
-                btn.configure(image=icono_ctk, compound="left")
             btn.pack(fill="x", padx=10, pady=5)
 
     def _crear_modulos(self):
@@ -201,16 +186,11 @@ class MenuTaller:
         self.frame_stats = ctk.CTkFrame(frame_inicio, fg_color=FONDO_TARJETA, corner_radius=10)
         self.frame_stats.pack(pady=20, padx=20, fill="x")
 
-        icon_stats = TablerIcons.load(OutlineIcon.CHART_BAR, size=20, color=COLOR_ACENTO)
-        icon_stats_ctk = ctk.CTkImage(light_image=icon_stats, dark_image=icon_stats, size=(20, 20))
-
         self.lbl_stats = ctk.CTkLabel(
             self.frame_stats,
-            text=" Cargando datos...",
+            text=" 📊 Cargando datos...",
             font=("Inter", 16, "bold"),
-            text_color=COLOR_ACENTO,
-            image=icon_stats_ctk,
-            compound="left"
+            text_color=COLOR_ACENTO
         )
         self.lbl_stats.pack(pady=15)
 
