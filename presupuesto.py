@@ -1,10 +1,15 @@
 import customtkinter as ctk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
+from datetime import datetime
+import os
 from database import Database
 from utilidades import formatear_fecha
 from colores_app import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+MESES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
 class GestionPresupuestos:
     def __init__(self, padre, rol, usuario_actual):
@@ -116,6 +121,13 @@ class GestionPresupuestos:
             command=self.cargar_historial
         )
         boton_refrescar.pack(side="left", padx=5)
+
+        boton_reporte = ctk.CTkButton(
+            barra_herramientas, text="💵 Reporte de Recaudos",
+            fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO,
+            command=self.abrir_reporte_recaudos
+        )
+        boton_reporte.pack(side="left", padx=5)
 
         style = ttk.Style()
         style.theme_use("clam")
@@ -310,3 +322,156 @@ class GestionPresupuestos:
 
         except Exception as e:
             messagebox.showerror("Error", f"Ocurrió un error al cargar el detalle:\n{str(e)}")
+
+    LINEA = "=" * 78
+    SEPARADOR = "-" * 78
+
+    def _generar_texto_reporte(self, filas, anio, mes, nombre_mes):
+        """Arma el texto del recibo de recaudos, en columnas de ancho fijo."""
+        total_cobrado = sum(float(f['cobrado_mes']) for f in filas)
+        lineas = [
+            self.LINEA,
+            self.LINEA,
+            "                 TALLER DON JULIO - REPORTE DE RECAUDOS".center(78),
+            self.LINEA,
+            f" Periodo:  {nombre_mes} {anio}",
+            f" Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            f" Usuario:  {self.usuario_actual}",
+            self.SEPARADOR,
+            " DETALLE POR ORDEN",
+            self.SEPARADOR,
+            f" {'#':<3}{'CLIENTE':<20}{'PLACA':<11}{'TOTAL ORDEN':>13} {'COBRADO MES':>14} {'SALDO':>11} ",
+            self.SEPARADOR,
+        ]
+
+        for i, f in enumerate(filas, start=1):
+            total_orden = float(f['total_orden_usd'] or 0)
+            cobrado_mes = float(f['cobrado_mes'] or 0)
+            cobrado_total = float(f['cobrado_total'] or 0)
+            saldo = total_orden - cobrado_total
+            lineas.append(
+                f" {i:<3}{str(f['cliente'])[:18]:<20}{str(f['placa']):<11}"
+                f"${total_orden:>12,.2f} ${cobrado_mes:>13,.2f} ${saldo:>10,.2f} "
+            )
+
+        lineas += [
+            self.SEPARADOR,
+            " RESUMEN DEL MES",
+            self.SEPARADOR,
+            f" Ordenes con cobros:   {len(filas)}",
+            f" Total cobrado (USD):  ${total_cobrado:>12,.2f}",
+            self.LINEA,
+            " NOTA: este reporte muestra el dinero cobrado (ingresos) del periodo.",
+            " No descuenta el costo de los repuestos, la mano de obra ni los gastos",
+            " generales, por lo que no equivale a la ganancia final del taller.",
+            self.LINEA,
+        ]
+        return "\n".join(lineas), total_cobrado
+
+    def abrir_reporte_recaudos(self):
+        meses = self.bd.listar_meses_con_pagos()
+        if not meses:
+            messagebox.showinfo("Sin datos", "Todavia no hay pagos registrados.", parent=self.marco)
+            return
+
+        ventana = ctk.CTkToplevel(self.padre)
+        ventana.title("Reporte de Recaudos")
+        ventana.geometry("860x700")
+        ventana.resizable(False, False)
+
+        marco = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        marco.pack(fill="both", expand=True, padx=15, pady=15)
+
+        ctk.CTkLabel(marco, text="\U0001F4B5 Reporte de Recaudos por Mes", font=("Inter", 16, "bold"),
+                     text_color=TEXTO_BLANCO).pack(anchor="w")
+        ctk.CTkLabel(marco, text="Muestra el dinero cobrado en el mes elegido. No incluye costos ni "
+                                 "gastos, por lo que no es la ganancia final del taller.",
+                      font=("Inter", 11), text_color=TEXTO_GRIS, wraplength=790,
+                      justify="left").pack(anchor="w", pady=(2, 10))
+
+        barra = ctk.CTkFrame(marco, fg_color="transparent")
+        barra.pack(fill="x")
+
+        ctk.CTkLabel(barra, text="Mes:", text_color=TEXTO_BLANCO).pack(side="left", padx=(0, 6))
+        etiquetas = [f"{MESES_ES[m['mes'] - 1]} {m['anio']}" for m in meses]
+        self.mes_reporte_var = ctk.StringVar(value=etiquetas[0])
+        self.lista_mes_reporte = ctk.CTkComboBox(barra, values=etiquetas, width=190, state="readonly",
+                                                 variable=self.mes_reporte_var)
+        self.lista_mes_reporte.pack(side="left")
+
+        boton_guardar = ctk.CTkButton(barra, text="\U0001F4BE Guardar como .txt", fg_color=COLOR_VERDE,
+                                      text_color=TEXTO_BLANCO, state="disabled",
+                                      command=self._guardar_reporte_txt)
+        boton_guardar.pack(side="left", padx=10)
+
+        self.caja_reporte = ctk.CTkTextbox(marco, font=("Courier New", 12), wrap="none")
+        self.caja_reporte.pack(fill="both", expand=True, pady=12)
+        self.caja_reporte.configure(state="disabled")
+
+        ctk.CTkButton(marco, text="Cerrar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
+                      command=ventana.destroy).pack(pady=(0, 5))
+
+        self._boton_guardar = boton_guardar
+        self._meses_reporte = dict(zip(etiquetas, meses))
+        self.mes_reporte_var.trace_add("write", self._mostrar_vista_previa)
+        self._mostrar_vista_previa()
+
+    def _mostrar_vista_previa(self, *_eventos):
+        """Pinta el reporte del mes elegido; se refresca solo al cambiar de mes."""
+        datos = self._meses_reporte.get(self.mes_reporte_var.get())
+        if not datos:
+            return
+
+        filas = self.bd.obtener_recaudos_del_mes(int(datos['anio']), int(datos['mes']))
+        if filas:
+            texto, _ = self._generar_texto_reporte(filas, datos['anio'], datos['mes'],
+                                                  MESES_ES[datos['mes'] - 1])
+        else:
+            texto = "No hay cobros registrados en el mes seleccionado."
+
+        self.caja_reporte.configure(state="normal")
+        self.caja_reporte.delete("1.0", ctk.END)
+        self.caja_reporte.insert("1.0", texto)
+        self.caja_reporte.configure(state="disabled")
+
+        self._boton_guardar.configure(
+            state="normal" if filas else "disabled",
+            text="\U0001F4BE Guardar como .txt" if filas else "Sin datos para guardar"
+        )
+
+    def _guardar_reporte_txt(self):
+        datos = self._meses_reporte.get(self.mes_reporte_var.get())
+        if not datos:
+            return
+
+        filas = self.bd.obtener_recaudos_del_mes(int(datos['anio']), int(datos['mes']))
+        if not filas:
+            messagebox.showinfo("Sin datos", "No hay cobros registrados en el mes seleccionado.",
+                                parent=self.marco)
+            return
+
+        texto, total = self._generar_texto_reporte(filas, datos['anio'], datos['mes'],
+                                                   MESES_ES[datos['mes'] - 1])
+        sugerencia = f"reporte_recaudos_{MESES_ES[datos['mes'] - 1].lower()}_{datos['anio']}.txt"
+        ruta = filedialog.asksaveasfilename(
+            parent=self.marco,
+            title="Guardar reporte de recaudos",
+            defaultextension=".txt",
+            initialfile=sugerencia,
+            filetypes=[("Archivo de texto", "*.txt"), ("Todos los archivos", "*.*")]
+        )
+        if not ruta:
+            return
+
+        try:
+            with open(ruta, "w", encoding="utf-8") as archivo:
+                archivo.write(texto)
+        except OSError as e:
+            messagebox.showerror("Error", f"No se pudo guardar el archivo:\n{e}", parent=self.marco)
+            return
+
+        self.bd.registrar_log(self.usuario_id, self.usuario_actual, "presupuestos", 0,
+                              "CREATE", f"Reporte de recaudos generado: {os.path.basename(ruta)}")
+        messagebox.showinfo("\u00c9xito",
+                            f"Reporte guardado en:\n{ruta}\n\nTotal cobrado: ${total:,.2f} "
+                            f"en {len(filas)} \u00f3rdenes.", parent=self.marco)

@@ -386,6 +386,35 @@ class Database:
             return resultado[0]
         return {'total': 0, 'mes': 0}
 
+    def listar_meses_con_pagos(self):
+        """Meses en los que se registraron pagos, del mas reciente al mas antiguo."""
+        consulta = """
+            SELECT DISTINCT YEAR(fecha_pago) AS anio, MONTH(fecha_pago) AS mes
+            FROM pagos
+            ORDER BY anio DESC, mes DESC
+        """
+        return self.obtener_todos(consulta) or []
+
+    def obtener_recaudos_del_mes(self, anio, mes):
+        """Detalle por orden de lo cobrado en un mes, con el saldo pendiente de cada una."""
+        consulta = """
+            SELECT o.id AS orden_id,
+                   c.nombre AS cliente,
+                   v.placa,
+                   o.total_orden_usd,
+                   SUM(p.monto_ref_usd) AS cobrado_mes,
+                   (SELECT COALESCE(SUM(p2.monto_ref_usd), 0)
+                      FROM pagos p2 WHERE p2.orden_id = o.id) AS cobrado_total
+            FROM ordenes o
+            JOIN vehiculos v ON o.vehiculo_id = v.id
+            JOIN clientes c ON v.cliente_id = c.id
+            JOIN pagos p ON p.orden_id = o.id
+            WHERE YEAR(p.fecha_pago) = %s AND MONTH(p.fecha_pago) = %s
+            GROUP BY o.id, c.nombre, v.placa, o.total_orden_usd
+            ORDER BY o.id
+        """
+        return self.obtener_todos(consulta, (anio, mes)) or []
+
     def listar_pagos_por_orden(self, id_orden):
         consulta = """
             SELECT id, monto_original, moneda, tasa_cambio, monto_ref_usd,
