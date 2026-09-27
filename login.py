@@ -43,61 +43,61 @@ def main():
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
 
-    root = ctk.CTk()
-    root.title("Taller Don Julio - Acceso")
+    raiz = ctk.CTk()
+    raiz.title("Taller Don Julio - Acceso")
 
-    root.report_callback_exception = lambda tipo, valor, tb: alertar_error(tipo, valor, tb)
+    raiz.report_callback_exception = lambda tipo, valor, tb: alertar_error(tipo, valor, tb)
     sys.excepthook = lambda tipo, valor, tb: alertar_error(tipo, valor, tb)
 
-    root.after(80, maximizar_ventana, root)
-    root.minsize(1024, 700)
+    raiz.after(80, maximizar_ventana, raiz)
+    raiz.minsize(1024, 700)
 
-    frame_login = ctk.CTkFrame(
-        root, 
+    marco_login = ctk.CTkFrame(
+        raiz, 
         width=650, 
         height=720, 
         corner_radius=30, 
         fg_color=("white", FONDO_TARJETA)
     )
-    frame_login.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.60, relheight=0.85)
+    marco_login.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.60, relheight=0.85)
 
-    img_llave = ctk.CTkImage(Image.open(os.path.join(BASE_DIR, "llave_inglesa.png")), size=(175, 175))
+    imagen_llave = ctk.CTkImage(Image.open(os.path.join(BASE_DIR, "llave_inglesa.png")), size=(175, 175))
     ctk.CTkLabel(
-        frame_login, 
+        marco_login, 
         text="",          
-        image=img_llave
+        image=imagen_llave
     ).pack(pady=(2, 2))
 
     ctk.CTkLabel(
-        frame_login, 
+        marco_login, 
         text="Sistema de Gestión Operativa", 
         font=("Inter", 17), 
         text_color=("gray40", TEXTO_GRIS)
     ).pack(pady=(0, 35))  
 
     def limpiar_error(e=None):
-        label_error.configure(text="")
+        etiqueta_error.configure(text="")
 
-    ctk.CTkLabel(frame_login, text="👤 Usuario", font=("Inter", 18, "bold"), anchor="w").pack(fill="x", padx=85, pady=(0, 8))
-    entry1 = ctk.CTkEntry(frame_login, placeholder_text="Ingrese su usuario", height=58, font=("Inter", 16))
-    entry1.pack(fill="x", padx=85, pady=(0, 25))
-    entry1.bind("<Key-Return>", lambda e: entry2.focus())
-    entry1.bind("<Key>", limpiar_error)
+    ctk.CTkLabel(marco_login, text="👤 Usuario", font=("Inter", 18, "bold"), anchor="w").pack(fill="x", padx=85, pady=(0, 8))
+    campo1 = ctk.CTkEntry(marco_login, placeholder_text="Ingrese su usuario", height=58, font=("Inter", 16))
+    campo1.pack(fill="x", padx=85, pady=(0, 25))
+    campo1.bind("<Key-Return>", lambda e: campo2.focus())
+    campo1.bind("<Key>", limpiar_error)
 
-    ctk.CTkLabel(frame_login, text="🔒 Contraseña", font=("Inter", 18, "bold"), anchor="w").pack(fill="x", padx=85, pady=(0, 8))
-    entry2 = ctk.CTkEntry(frame_login, placeholder_text="Ingrese su contraseña", height=58, show="*", font=("Inter", 16))
-    entry2.pack(fill="x", padx=85, pady=(0, 15))
-    entry2.bind("<Key>", limpiar_error)
+    ctk.CTkLabel(marco_login, text="🔒 Contraseña", font=("Inter", 18, "bold"), anchor="w").pack(fill="x", padx=85, pady=(0, 8))
+    campo2 = ctk.CTkEntry(marco_login, placeholder_text="Ingrese su contraseña", height=58, show="*", font=("Inter", 16))
+    campo2.pack(fill="x", padx=85, pady=(0, 15))
+    campo2.bind("<Key>", limpiar_error)
 
-    def toggle_password_check():
-        entry2.configure(show="" if check_var.get() == 1 else "*")
+    def alternar_verificacion_contrasena():
+        campo2.configure(show="" if var_verificacion.get() == 1 else "*")
 
-    check_var = ctk.IntVar(value=0)
-    check_pass = ctk.CTkCheckBox(
-        frame_login, 
+    var_verificacion = ctk.IntVar(value=0)
+    verificacion_contrasena = ctk.CTkCheckBox(
+        marco_login, 
         text="Mostrar contraseña", 
-        variable=check_var, 
-        command=toggle_password_check,
+        variable=var_verificacion, 
+        command=alternar_verificacion_contrasena,
         font=("Inter", 15),
         checkbox_width=22,
         checkbox_height=22,
@@ -105,33 +105,33 @@ def main():
         fg_color=COLOR_ACENTO,
         hover_color=COLOR_ACENTO_OSCURO
     )
-    check_pass.pack(anchor="w", padx=85, pady=(0, 25))
+    verificacion_contrasena.pack(anchor="w", padx=85, pady=(0, 25))
 
-    label_error = ctk.CTkLabel(frame_login, text="", font=("Inter", 15, "bold"), text_color="#ff4444", wraplength=500)
-    label_error.pack(pady=(0, 15))
+    etiqueta_error = ctk.CTkLabel(marco_login, text="", font=("Inter", 15, "bold"), text_color="#ff4444", wraplength=500)
+    etiqueta_error.pack(pady=(0, 15))
 
     def validar_login():
-        usuario = entry1.get().strip()
-        clave = entry2.get().strip()
+        usuario = campo1.get().strip()
+        clave = campo2.get().strip()
 
         if not usuario or not clave:
-            label_error.configure(text="⚠️ Por favor, complete todos los campos")
+            etiqueta_error.configure(text="⚠️ Por favor, complete todos los campos")
             return
 
-        db = Database()
-        exito, mensaje, rol = db.verify_user(usuario, clave)
+        bd = Database()
+        exito, mensaje, rol = bd.verificar_usuario(usuario, clave)
 
         if exito:
-            for widget in root.winfo_children():
+            for widget in raiz.winfo_children():
                 widget.destroy()
-            MenuTaller(root, rol, usuario)
+            MenuTaller(raiz, rol, usuario)
         else:
-            label_error.configure(text=f"❌ {mensaje}")
-            entry2.delete(0, tk.END)
-            entry2.focus()
+            etiqueta_error.configure(text=f"❌ {mensaje}")
+            campo2.delete(0, tk.END)
+            campo2.focus()
 
-    button = ctk.CTkButton(
-        frame_login,
+    boton = ctk.CTkButton(
+        marco_login,
         text="Iniciar Sesión",
         height=62,
         font=("Inter", 18, "bold"),
@@ -140,12 +140,12 @@ def main():
         hover_color=COLOR_ACENTO_OSCURO,
         command=validar_login
     )
-    button.pack(fill="x", padx=85, pady=(0, 35))
+    boton.pack(fill="x", padx=85, pady=(0, 35))
 
-    entry2.bind("<Key-Return>", lambda e: validar_login())
-    entry1.focus()
+    campo2.bind("<Key-Return>", lambda e: validar_login())
+    campo1.focus()
 
-    root.mainloop()
+    raiz.mainloop()
 
 if __name__ == "__main__":
     main()

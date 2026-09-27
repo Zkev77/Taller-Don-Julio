@@ -11,77 +11,77 @@ class Database:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(Database, cls).__new__(cls)
-            cls._instance._load_config()
+            cls._instance._cargar_configuracion()
         return cls._instance
 
-    def _load_config(self):
+    def _cargar_configuracion(self):
         load_dotenv()
-        self.host = os.getenv('DB_HOST', 'localhost')
-        self.user = os.getenv('DB_USER', '')
-        self.password = os.getenv('DB_PASSWORD', '')
-        self.database = os.getenv('DB_NAME', 'taller')
+        self.servidor = os.getenv('DB_HOST', 'localhost')
+        self.usuario = os.getenv('DB_USER', '')
+        self.contrasena = os.getenv('DB_PASSWORD', '')
+        self.base_datos = os.getenv('DB_NAME', 'taller')
 
-    def get_connection(self):
-        if not self.user or not self.password:
+    def obtener_conexion(self):
+        if not self.usuario or not self.contrasena:
             print("Error de configuración: defina DB_USER y DB_PASSWORD en el archivo .env")
             return None
         try:
             return mysql.connector.connect(
-                host=self.host,
-                user=self.user,
-                password=self.password,
-                database=self.database
+                host=self.servidor,
+                user=self.usuario,
+                password=self.contrasena,
+                database=self.base_datos
             )
         except Error as e:
             print(f"Error de conexión: {e}")
             return None
 
-    def execute_query(self, query, params=None):
-        conn = self.get_connection()
-        if not conn:
+    def ejecutar_consulta(self, consulta, parametros=None):
+        conexion = self.obtener_conexion()
+        if not conexion:
             return False, "Error de conexión", None
-        cursor = conn.cursor()
+        cursor = conexion.cursor()
         try:
-            cursor.execute(query, params or ())
-            conn.commit()
+            cursor.execute(consulta, parametros or ())
+            conexion.commit()
             return True, "Operación exitosa", cursor.lastrowid
         except Error as e:
             return False, f"Error: {e}", None
         finally:
             cursor.close()
-            conn.close()
+            conexion.close()
 
-    def fetch_all(self, query, params=None):
-        conn = self.get_connection()
-        if not conn:
+    def obtener_todos(self, consulta, parametros=None):
+        conexion = self.obtener_conexion()
+        if not conexion:
             return None
-        cursor = conn.cursor(dictionary=True)
+        cursor = conexion.cursor(dictionary=True)
         try:
-            cursor.execute(query, params or ())
+            cursor.execute(consulta, parametros or ())
             return cursor.fetchall()
         except Error as e:
-            print(f"Error en fetch_all: {e}")
+            print(f"Error en obtener_todos: {e}")
             return None
         finally:
             cursor.close()
-            conn.close()
+            conexion.close()
 
-    def verify_user(self, username, password):
-        conn = self.get_connection()
-        if not conn:
+    def verificar_usuario(self, nombre_usuario, contrasena):
+        conexion = self.obtener_conexion()
+        if not conexion:
             return False, "Error de conexión", None
-        cursor = conn.cursor()
+        cursor = conexion.cursor()
         try:
-            password_hash = hashlib.sha256(password.encode()).hexdigest()
-            query = "SELECT password, rol FROM usuarios WHERE username = %s"
-            cursor.execute(query, (username,))
+            hash_contrasena = hashlib.sha256(contrasena.encode()).hexdigest()
+            consulta = "SELECT password, rol FROM usuarios WHERE username = %s"
+            cursor.execute(consulta, (nombre_usuario,))
             resultado = cursor.fetchone()
             if resultado:
-                password_bd = resultado[0]
-                if isinstance(password_bd, bytes):
-                    password_bd = password_bd.decode('utf-8')
+                contrasena_bd = resultado[0]
+                if isinstance(contrasena_bd, bytes):
+                    contrasena_bd = contrasena_bd.decode('utf-8')
                 rol = resultado[1] if len(resultado) > 1 else "mecanico"
-                if password_hash == password_bd:
+                if hash_contrasena == contrasena_bd:
                     return True, "Login exitoso", rol
                 else:
                     return False, "Contraseña incorrecta", None
@@ -91,85 +91,85 @@ class Database:
             return False, f"Error: {e}", None
         finally:
             cursor.close()
-            conn.close()
+            conexion.close()
 
     def listar_clientes(self):
-        return self.fetch_all("SELECT id, cedula, nombre, telefono, email FROM clientes ORDER BY id")
+        return self.obtener_todos("SELECT id, cedula, nombre, telefono, email FROM clientes ORDER BY id")
 
     def agregar_cliente(self, cedula, nombre, telefono, email):
-        if self.fetch_all("SELECT id FROM clientes WHERE cedula = %s", (cedula,)):
+        if self.obtener_todos("SELECT id FROM clientes WHERE cedula = %s", (cedula,)):
             return False, "La cédula ya existe", None
-        query = "INSERT INTO clientes (cedula, nombre, telefono, email) VALUES (%s, %s, %s, %s)"
-        exito, mensaje, lastrowid = self.execute_query(query, (cedula, nombre, telefono, email))
-        return exito, mensaje, lastrowid
+        consulta = "INSERT INTO clientes (cedula, nombre, telefono, email) VALUES (%s, %s, %s, %s)"
+        exito, mensaje, ultimo_id = self.ejecutar_consulta(consulta, (cedula, nombre, telefono, email))
+        return exito, mensaje, ultimo_id
 
     def actualizar_cliente(self, id_cliente, cedula, nombre, telefono, email):
-        duplicado = self.fetch_all("SELECT id FROM clientes WHERE cedula = %s AND id != %s", (cedula, id_cliente))
+        duplicado = self.obtener_todos("SELECT id FROM clientes WHERE cedula = %s AND id != %s", (cedula, id_cliente))
         if duplicado:
             return False, "La cédula ya está en uso por otro cliente"
         if self.existe_telefono(telefono, id_cliente):
             return False, "El número de teléfono ya está en uso por otro cliente"
-        query = "UPDATE clientes SET cedula=%s, nombre=%s, telefono=%s, email=%s WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (cedula, nombre, telefono, email, id_cliente))
+        consulta = "UPDATE clientes SET cedula=%s, nombre=%s, telefono=%s, email=%s WHERE id=%s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (cedula, nombre, telefono, email, id_cliente))
         return exito, mensaje
 
     def existe_telefono(self, telefono, id_cliente=None):
         if id_cliente:
-            query = "SELECT id FROM clientes WHERE telefono = %s AND id != %s"
-            params = (telefono, id_cliente)
+            consulta = "SELECT id FROM clientes WHERE telefono = %s AND id != %s"
+            parametros = (telefono, id_cliente)
         else:
-            query = "SELECT id FROM clientes WHERE telefono = %s"
-            params = (telefono,)
-        return bool(self.fetch_all(query, params))
+            consulta = "SELECT id FROM clientes WHERE telefono = %s"
+            parametros = (telefono,)
+        return bool(self.obtener_todos(consulta, parametros))
 
     def eliminar_cliente(self, id_cliente):
-        query = "DELETE FROM clientes WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (id_cliente,))
+        consulta = "DELETE FROM clientes WHERE id=%s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (id_cliente,))
         return exito, mensaje
 
     def obtener_cliente_por_id(self, id_cliente):
-        res = self.fetch_all("SELECT id, cedula, nombre, telefono, email FROM clientes WHERE id=%s", (id_cliente,))
-        return res[0] if res else None
+        resultado = self.obtener_todos("SELECT id, cedula, nombre, telefono, email FROM clientes WHERE id=%s", (id_cliente,))
+        return resultado[0] if resultado else None
 
     def listar_vehiculos(self):
-        query = """
+        consulta = """
             SELECT v.id, v.placa, v.marca, v.modelo, c.nombre as cliente_nombre, v.cliente_id
             FROM vehiculos v
             JOIN clientes c ON v.cliente_id = c.id
             ORDER BY v.id
         """
-        return self.fetch_all(query)
+        return self.obtener_todos(consulta)
 
-    def listar_clientes_combobox(self):
-        return self.fetch_all("SELECT id, nombre FROM clientes ORDER BY nombre")
+    def listar_clientes_combo(self):
+        return self.obtener_todos("SELECT id, nombre FROM clientes ORDER BY nombre")
     
     def agregar_vehiculo(self, placa, marca, modelo, cliente_id):
-        if self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s", (placa,)):
+        if self.obtener_todos("SELECT id FROM vehiculos WHERE placa = %s", (placa,)):
             return False, "La placa ya existe", None
-        query = "INSERT INTO vehiculos (placa, marca, modelo, cliente_id) VALUES (%s, %s, %s, %s)"
-        exito, mensaje, lastrowid = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id))
-        return exito, mensaje, lastrowid
+        consulta = "INSERT INTO vehiculos (placa, marca, modelo, cliente_id) VALUES (%s, %s, %s, %s)"
+        exito, mensaje, ultimo_id = self.ejecutar_consulta(consulta, (placa.upper(), marca, modelo, cliente_id))
+        return exito, mensaje, ultimo_id
 
     def actualizar_vehiculo(self, id_vehiculo, placa, marca, modelo, cliente_id):
-        duplicado = self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s AND id != %s", (placa, id_vehiculo))
+        duplicado = self.obtener_todos("SELECT id FROM vehiculos WHERE placa = %s AND id != %s", (placa, id_vehiculo))
         if duplicado:
             return False, "La placa ya está en uso por otro vehículo"
-        query = "UPDATE vehiculos SET placa=%s, marca=%s, modelo=%s, cliente_id=%s WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (placa.upper(), marca, modelo, cliente_id, id_vehiculo))
+        consulta = "UPDATE vehiculos SET placa=%s, marca=%s, modelo=%s, cliente_id=%s WHERE id=%s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (placa.upper(), marca, modelo, cliente_id, id_vehiculo))
         return exito, mensaje
 
     def obtener_vehiculo_por_id(self, id_vehiculo):
-        res = self.fetch_all("SELECT id, placa, marca, modelo, cliente_id FROM vehiculos WHERE id=%s", (id_vehiculo,))
-        return res[0] if res else None
+        resultado = self.obtener_todos("SELECT id, placa, marca, modelo, cliente_id FROM vehiculos WHERE id=%s", (id_vehiculo,))
+        return resultado[0] if resultado else None
 
     def eliminar_vehiculo(self, id_vehiculo):
-        query = "DELETE FROM vehiculos WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (id_vehiculo,))
+        consulta = "DELETE FROM vehiculos WHERE id=%s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (id_vehiculo,))
         return exito, mensaje
 
     # CORREGIDO: Agregado total_orden_usd en la consulta
     def listar_ordenes_completas(self):
-        query = """
+        consulta = """
             SELECT 
                 o.id, o.descripcion, o.estado, o.fecha, o.total_orden_usd,
                 v.placa, v.marca, v.modelo,
@@ -179,24 +179,24 @@ class Database:
             JOIN clientes c ON v.cliente_id = c.id
             ORDER BY o.fecha DESC
         """
-        return self.fetch_all(query)
+        return self.obtener_todos(consulta)
 
     def listar_vehiculos_con_cliente(self):
-        query = """
+        consulta = """
             SELECT v.id, v.placa, v.marca, v.modelo, c.nombre AS cliente_nombre
             FROM vehiculos v
             JOIN clientes c ON v.cliente_id = c.id
             ORDER BY v.placa
         """
-        return self.fetch_all(query)
+        return self.obtener_todos(consulta)
 
     def crear_orden(self, vehiculo_id, descripcion, estado="Ingresado", total=0):
-        query = "INSERT INTO ordenes (vehiculo_id, descripcion, estado, fecha, total_orden_usd) VALUES (%s, %s, %s, NOW(), %s)"
-        exito, mensaje, lastrowid = self.execute_query(query, (vehiculo_id, descripcion, estado, total))
-        return exito, mensaje, lastrowid
+        consulta = "INSERT INTO ordenes (vehiculo_id, descripcion, estado, fecha, total_orden_usd) VALUES (%s, %s, %s, NOW(), %s)"
+        exito, mensaje, ultimo_id = self.ejecutar_consulta(consulta, (vehiculo_id, descripcion, estado, total))
+        return exito, mensaje, ultimo_id
 
     def obtener_orden_completa(self, id_orden):
-        query = """
+        consulta = """
             SELECT 
                 o.id, o.descripcion, o.estado, o.fecha,
                 v.placa, v.marca, v.modelo,
@@ -206,94 +206,63 @@ class Database:
             JOIN clientes c ON v.cliente_id = c.id
             WHERE o.id = %s
         """
-        res = self.fetch_all(query, (id_orden,))
-        return res[0] if res else None
+        resultado = self.obtener_todos(consulta, (id_orden,))
+        return resultado[0] if resultado else None
 
     def actualizar_estado_orden(self, id_orden, nuevo_estado):
-        query = "UPDATE ordenes SET estado = %s WHERE id = %s"
-        exito, mensaje, _ = self.execute_query(query, (nuevo_estado, id_orden))
+        consulta = "UPDATE ordenes SET estado = %s WHERE id = %s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (nuevo_estado, id_orden))
         return exito, mensaje
 
     def eliminar_orden(self, id_orden):
-        query = "DELETE FROM ordenes WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (id_orden,))
+        consulta = "DELETE FROM ordenes WHERE id=%s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (id_orden,))
         return exito, mensaje
 
     def listar_repuestos(self):
-        return self.fetch_all("SELECT id, nombre, descripcion, precio, stock, proveedor FROM repuestos ORDER BY nombre")
+        return self.obtener_todos("SELECT id, nombre, descripcion, precio, stock, proveedor FROM repuestos ORDER BY nombre")
 
     def agregar_repuesto(self, nombre, descripcion, precio, stock, proveedor=""):
-        query = "INSERT INTO repuestos (nombre, descripcion, precio, stock, proveedor) VALUES (%s, %s, %s, %s, %s)"
-        exito, mensaje, lastrowid = self.execute_query(query, (nombre, descripcion, precio, stock, proveedor))
-        return exito, mensaje, lastrowid
+        consulta = "INSERT INTO repuestos (nombre, descripcion, precio, stock, proveedor) VALUES (%s, %s, %s, %s, %s)"
+        exito, mensaje, ultimo_id = self.ejecutar_consulta(consulta, (nombre, descripcion, precio, stock, proveedor))
+        return exito, mensaje, ultimo_id
 
     def actualizar_repuesto(self, id_repuesto, nombre, descripcion, precio, stock, proveedor=""):
-        query = "UPDATE repuestos SET nombre=%s, descripcion=%s, precio=%s, stock=%s, proveedor=%s WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (nombre, descripcion, precio, stock, proveedor, id_repuesto))
+        consulta = "UPDATE repuestos SET nombre=%s, descripcion=%s, precio=%s, stock=%s, proveedor=%s WHERE id=%s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (nombre, descripcion, precio, stock, proveedor, id_repuesto))
         return exito, mensaje
 
     def eliminar_repuesto(self, id_repuesto):
-        query = "DELETE FROM repuestos WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (id_repuesto,))
+        consulta = "DELETE FROM repuestos WHERE id=%s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (id_repuesto,))
         return exito, mensaje
 
     def obtener_repuesto_por_id(self, id_repuesto):
-        res = self.fetch_all("SELECT id, nombre, descripcion, precio, stock, proveedor FROM repuestos WHERE id=%s", (id_repuesto,))
-        return res[0] if res else None
+        resultado = self.obtener_todos("SELECT id, nombre, descripcion, precio, stock, proveedor FROM repuestos WHERE id=%s", (id_repuesto,))
+        return resultado[0] if resultado else None
 
     def actualizar_stock(self, id_repuesto, cantidad):
-        query = "UPDATE repuestos SET stock = stock - %s WHERE id = %s"
-        exito, mensaje, _ = self.execute_query(query, (cantidad, id_repuesto))
+        consulta = "UPDATE repuestos SET stock = stock - %s WHERE id = %s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (cantidad, id_repuesto))
         return exito, mensaje
 
     def incrementar_stock(self, id_repuesto, cantidad):
-        query = "UPDATE repuestos SET stock = stock + %s WHERE id = %s"
-        exito, mensaje, _ = self.execute_query(query, (cantidad, id_repuesto))
-        return exito, mensaje
-
-    def listar_repuestos_por_orden(self, id_orden):
-        query = """
-            SELECT orp.id AS orden_repuesto_id, r.id AS repuesto_id, r.nombre,
-                   orp.cantidad, orp.precio_unitario,
-                   (orp.cantidad * orp.precio_unitario) AS subtotal
-            FROM orden_repuestos orp
-            JOIN repuestos r ON orp.repuesto_id = r.id
-            WHERE orp.orden_id = %s
-            ORDER BY orp.id
-        """
-        return self.fetch_all(query, (id_orden,))
-
-    def agregar_repuesto_a_orden(self, orden_id, repuesto_id, cantidad, precio_unitario):
-        repuesto = self.obtener_repuesto_por_id(repuesto_id)
-        if not repuesto:
-            return False, "Repuesto no encontrado"
-        if repuesto['stock'] < cantidad:
-            return False, f"Stock insuficiente (disponible: {repuesto['stock']})"
-        exito, mensaje, _ = self.execute_query(
-            "INSERT INTO orden_repuestos (orden_id, repuesto_id, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
-            (orden_id, repuesto_id, cantidad, precio_unitario)
-        )
-        if exito:
-            self.actualizar_stock(repuesto_id, cantidad)
-        return exito, mensaje
-
-    def eliminar_orden_repuesto(self, orden_repuesto_id):
-        query = "DELETE FROM orden_repuestos WHERE id=%s"
-        exito, mensaje, _ = self.execute_query(query, (orden_repuesto_id,))
+        consulta = "UPDATE repuestos SET stock = stock + %s WHERE id = %s"
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (cantidad, id_repuesto))
         return exito, mensaje
 
     def registrar_movimiento(self, repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre):
-        query = """
+        consulta = """
             INSERT INTO movimientos_inventario (repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
-        exito, mensaje, _ = self.execute_query(
-            query, (repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre)
+        exito, mensaje, _ = self.ejecutar_consulta(
+            consulta, (repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre)
         )
         return exito, mensaje
 
     def listar_movimientos(self, limite=200):
-        query = """
+        consulta = """
             SELECT m.id, r.nombre AS repuesto, m.tipo, m.cantidad, m.motivo,
                    m.usuario_nombre, m.fecha_hora
             FROM movimientos_inventario m
@@ -301,75 +270,75 @@ class Database:
             ORDER BY m.fecha_hora DESC
             LIMIT %s
         """
-        return self.fetch_all(query, (limite,))
+        return self.obtener_todos(consulta, (limite,))
 
     def registrar_log(self, usuario_id, usuario_nombre, tabla, registro_id, accion, descripcion=""):
-        query = """
+        consulta = """
             INSERT INTO logs_auditoria (usuario_id, usuario_nombre, tabla_afectada, registro_id, accion, descripcion)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
-        exito, mensaje, _ = self.execute_query(query, (usuario_id, usuario_nombre, tabla, registro_id, accion, descripcion))
+        exito, mensaje, _ = self.ejecutar_consulta(consulta, (usuario_id, usuario_nombre, tabla, registro_id, accion, descripcion))
         return exito, mensaje
 
     def listar_logs(self, limite=100):
-        query = """
+        consulta = """
             SELECT id, usuario_nombre, tabla_afectada, registro_id, accion, descripcion, fecha_hora
             FROM logs_auditoria
             ORDER BY fecha_hora DESC
             LIMIT %s
         """
-        return self.fetch_all(query, (limite,))
+        return self.obtener_todos(consulta, (limite,))
 
     def listar_logs_por_tabla(self, tabla):
-        query = """
+        consulta = """
             SELECT id, usuario_nombre, tabla_afectada, registro_id, accion, descripcion, fecha_hora
             FROM logs_auditoria
             WHERE tabla_afectada = %s
             ORDER BY fecha_hora DESC
         """
-        return self.fetch_all(query, (tabla,))
+        return self.obtener_todos(consulta, (tabla,))
 
     def contar_logs_por_accion(self):
-        query = """
+        consulta = """
             SELECT accion, COUNT(*) as total
             FROM logs_auditoria
             GROUP BY accion
         """
-        return self.fetch_all(query)
+        return self.obtener_todos(consulta)
 
     def obtener_estadisticas_taller(self):
-        stats = {}
-        clientes = self.fetch_all("SELECT COUNT(*) as total FROM clientes")
-        stats['total_clientes'] = clientes[0]['total'] if clientes else 0
-        vehiculos = self.fetch_all("SELECT COUNT(*) as total FROM vehiculos")
-        stats['total_vehiculos'] = vehiculos[0]['total'] if vehiculos else 0
-        ordenes_estado = self.fetch_all("""
+        estadisticas = {}
+        clientes = self.obtener_todos("SELECT COUNT(*) as total FROM clientes")
+        estadisticas['total_clientes'] = clientes[0]['total'] if clientes else 0
+        vehiculos = self.obtener_todos("SELECT COUNT(*) as total FROM vehiculos")
+        estadisticas['total_vehiculos'] = vehiculos[0]['total'] if vehiculos else 0
+        ordenes_estado = self.obtener_todos("""
             SELECT estado, COUNT(*) as total 
             FROM ordenes 
             GROUP BY estado
         """)
-        stats['ordenes_por_estado'] = ordenes_estado or []
-        ordenes_mes = self.fetch_all("""
+        estadisticas['ordenes_por_estado'] = ordenes_estado or []
+        ordenes_mes = self.obtener_todos("""
             SELECT COUNT(*) as total 
             FROM ordenes 
             WHERE MONTH(fecha) = MONTH(CURRENT_DATE()) 
             AND YEAR(fecha) = YEAR(CURRENT_DATE())
         """)
-        stats['ordenes_mes'] = ordenes_mes[0]['total'] if ordenes_mes else 0
-        repuestos_bajo_stock = self.fetch_all("""
+        estadisticas['ordenes_mes'] = ordenes_mes[0]['total'] if ordenes_mes else 0
+        repuestos_bajo_stock = self.obtener_todos("""
             SELECT COUNT(*) as total 
             FROM repuestos 
             WHERE stock < %s
         """, (BAJO_STOCK,))
-        stats['repuestos_bajo_stock'] = repuestos_bajo_stock[0]['total'] if repuestos_bajo_stock else 0
-        return stats
+        estadisticas['repuestos_bajo_stock'] = repuestos_bajo_stock[0]['total'] if repuestos_bajo_stock else 0
+        return estadisticas
 
-    def obtener_id_usuario(self, username):
-        res = self.fetch_all("SELECT id FROM usuarios WHERE username = %s", (username,))
-        return res[0]['id'] if res else None
+    def obtener_id_usuario(self, nombre_usuario):
+        resultado = self.obtener_todos("SELECT id FROM usuarios WHERE username = %s", (nombre_usuario,))
+        return resultado[0]['id'] if resultado else None
 
     def obtener_detalle_orden_pagos(self, id_orden):
-        query = """
+        consulta = """
             SELECT 
                 o.id, 
                 o.descripcion, 
@@ -386,9 +355,9 @@ class Database:
             GROUP BY o.id, o.descripcion, o.estado, o.total_orden_usd,
                      c.nombre, v.marca, v.modelo, v.placa
         """
-        res = self.fetch_all(query, (id_orden,))
-        if res:
-            return res[0]
+        resultado = self.obtener_todos(consulta, (id_orden,))
+        if resultado:
+            return resultado[0]
         # Si no encuentra la orden, devolver un diccionario con valores por defecto
         return {
             'id': id_orden,
@@ -400,25 +369,42 @@ class Database:
             'vehiculo': 'N/A'
         }
 
+    def obtener_totales_recaudados(self):
+        """Total cobrado historico y total del mes en curso, en USD."""
+        consulta = """
+            SELECT 
+                COALESCE(SUM(monto_ref_usd), 0) AS total,
+                COALESCE(SUM(
+                    CASE WHEN YEAR(fecha_pago) = YEAR(CURDATE()) 
+                          AND MONTH(fecha_pago) = MONTH(CURDATE()) 
+                         THEN monto_ref_usd ELSE 0 END
+                ), 0) AS mes
+            FROM pagos
+        """
+        resultado = self.obtener_todos(consulta)
+        if resultado:
+            return resultado[0]
+        return {'total': 0, 'mes': 0}
+
     def listar_pagos_por_orden(self, id_orden):
-        query = """
+        consulta = """
             SELECT id, monto_original, moneda, tasa_cambio, monto_ref_usd,
                    fecha_pago, metodo_pago, referencia
             FROM pagos
             WHERE orden_id = %s
             ORDER BY fecha_pago DESC
         """
-        return self.fetch_all(query, (id_orden,))
+        return self.obtener_todos(consulta, (id_orden,))
 
     def registrar_pago(self, orden_id, monto_original, moneda, tasa_cambio, monto_ref_usd, metodo_pago, referencia=""):
-        query = """
+        consulta = """
             INSERT INTO pagos (orden_id, monto_original, moneda, tasa_cambio, monto_ref_usd, metodo_pago, referencia)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        return self.execute_query(query, (orden_id, monto_original, moneda, tasa_cambio, monto_ref_usd, metodo_pago, referencia))
+        return self.ejecutar_consulta(consulta, (orden_id, monto_original, moneda, tasa_cambio, monto_ref_usd, metodo_pago, referencia))
 
     def obtener_resumen_pagos(self):
-        query = """
+        consulta = """
             SELECT 
                 DATE_FORMAT(fecha_pago, '%Y-%m') as mes,
                 SUM(monto_ref_usd) as total_usd
@@ -426,18 +412,18 @@ class Database:
             GROUP BY mes
             ORDER BY mes
         """
-        return self.fetch_all(query)
+        return self.obtener_todos(consulta)
 
     def obtener_distribucion_monedas(self):
-        query = """
+        consulta = """
             SELECT moneda, SUM(monto_ref_usd) as total_usd
             FROM pagos
             GROUP BY moneda
         """
-        return self.fetch_all(query)
+        return self.obtener_todos(consulta)
 
     def obtener_historial_pagos(self):
-        query = """
+        consulta = """
             SELECT p.id, o.id as orden_id, c.nombre as cliente,
                 CONCAT(v.marca, ' ', v.modelo) as vehiculo,
                 p.monto_original, p.moneda, p.tasa_cambio,
@@ -448,4 +434,4 @@ class Database:
             JOIN clientes c ON v.cliente_id = c.id
             ORDER BY p.fecha_pago DESC
         """
-        return self.fetch_all(query)
+        return self.obtener_todos(consulta)

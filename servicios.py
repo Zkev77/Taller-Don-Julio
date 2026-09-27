@@ -5,68 +5,68 @@ from utilidades import formatear_fecha, registrar_validador
 from colores_app import *
 
 class GestionServicios:
-    def __init__(self, parent, rol, usuario_actual):
-        self.parent = parent
+    def __init__(self, padre, rol, usuario_actual):
+        self.padre = padre
         self.rol = rol
         self.usuario_actual = usuario_actual
-        self.db = Database()
-        self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
+        self.bd = Database()
+        self.usuario_id = self.bd.obtener_id_usuario(usuario_actual) or 0
 
-        self.frame = ctk.CTkFrame(parent, fg_color=FONDO_TARJETA)
-        self.frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.marco = ctk.CTkFrame(padre, fg_color=FONDO_TARJETA)
+        self.marco.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.toolbar = ctk.CTkFrame(self.frame, fg_color=FONDO_TARJETA)
-        self.toolbar.pack(fill="x", pady=5)
+        self.barra_herramientas = ctk.CTkFrame(self.marco, fg_color=FONDO_TARJETA)
+        self.barra_herramientas.pack(fill="x", pady=5)
 
-        self.btn_nuevo = ctk.CTkButton(
-            self.toolbar, text="+ Nueva Orden",
+        self.boton_nuevo = ctk.CTkButton(
+            self.barra_herramientas, text="+ Nueva Orden",
             fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
             command=self.abrir_formulario_nueva_orden
         )
-        self.btn_nuevo.pack(side="left", padx=5)
+        self.boton_nuevo.pack(side="left", padx=5)
 
-        self.btn_ver_detalle = ctk.CTkButton(
-            self.toolbar, text="📋 Ver Detalle",
+        self.boton_ver_detalle = ctk.CTkButton(
+            self.barra_herramientas, text="📋 Ver Detalle",
             fg_color=COLOR_AZUL, text_color=TEXTO_BLANCO,
             command=self.abrir_detalle_orden
         )
-        self.btn_ver_detalle.pack(side="left", padx=5)
+        self.boton_ver_detalle.pack(side="left", padx=5)
 
-        self.btn_registrar_pago = ctk.CTkButton(
-            self.toolbar, text="💰 Registrar Pago",
+        self.boton_registrar_pago = ctk.CTkButton(
+            self.barra_herramientas, text="💰 Registrar Pago",
             fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO,
             command=self.abrir_ventana_pago
         )
-        self.btn_registrar_pago.pack(side="left", padx=5)
+        self.boton_registrar_pago.pack(side="left", padx=5)
 
-        self.btn_cambiar_estado = ctk.CTkButton(
-            self.toolbar, text="🔄 Cambiar Estado",
+        self.boton_cambiar_estado = ctk.CTkButton(
+            self.barra_herramientas, text="🔄 Cambiar Estado",
             fg_color=COLOR_AMARILLO, text_color=TEXTO_BLANCO,
             command=self.cambiar_estado
         )
-        self.btn_cambiar_estado.pack(side="left", padx=5)
+        self.boton_cambiar_estado.pack(side="left", padx=5)
 
-        self.btn_eliminar = ctk.CTkButton(
-            self.toolbar, text="🗑 Eliminar",
+        self.boton_eliminar = ctk.CTkButton(
+            self.barra_herramientas, text="🗑 Eliminar",
             fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
             command=self.eliminar_orden
         )
-        self.btn_eliminar.pack(side="left", padx=5)
+        self.boton_eliminar.pack(side="left", padx=5)
 
-        self.btn_refrescar = ctk.CTkButton(
-            self.toolbar, text="⟳ Refrescar",
+        self.boton_refrescar = ctk.CTkButton(
+            self.barra_herramientas, text="⟳ Refrescar",
             fg_color=FONDO_SIDEBAR, text_color=TEXTO_BLANCO,
             command=self.cargar_datos
         )
-        self.btn_refrescar.pack(side="left", padx=5)
+        self.boton_refrescar.pack(side="left", padx=5)
 
         if self.rol == 'auditor':
-            self.btn_nuevo.configure(state="disabled")
-            self.btn_registrar_pago.configure(state="disabled")
-            self.btn_cambiar_estado.configure(state="disabled")
-            self.btn_eliminar.configure(state="disabled")
+            self.boton_nuevo.configure(state="disabled")
+            self.boton_registrar_pago.configure(state="disabled")
+            self.boton_cambiar_estado.configure(state="disabled")
+            self.boton_eliminar.configure(state="disabled")
         elif self.rol == 'mecanico':
-            self.btn_eliminar.configure(state="disabled")
+            self.boton_eliminar.configure(state="disabled")
         elif self.rol in ['admin', 'secretaria']:
             pass
 
@@ -75,41 +75,41 @@ class GestionServicios:
         style.configure("Treeview", background=FONDO_TARJETA, foreground=TEXTO_BLANCO, fieldbackground=FONDO_TARJETA)
         style.map("Treeview", background=[('selected', COLOR_ACENTO)])
 
-        self.tree = ttk.Treeview(
-            self.frame,
+        self.arbol = ttk.Treeview(
+            self.marco,
             columns=("ID", "Fecha", "Vehículo", "Cliente", "Descripción", "Estado", "Total USD"),
             show="headings"
         )
-        self.tree.heading("ID", text="ID")
-        self.tree.heading("Fecha", text="Fecha")
-        self.tree.heading("Vehículo", text="Vehículo")
-        self.tree.heading("Cliente", text="Cliente")
-        self.tree.heading("Descripción", text="Descripción")
-        self.tree.heading("Estado", text="Estado")
-        self.tree.heading("Total USD", text="Total USD")
-        self.tree.column("ID", width=50)
-        self.tree.column("Fecha", width=120)
-        self.tree.column("Vehículo", width=120)
-        self.tree.column("Cliente", width=150)
-        self.tree.column("Descripción", width=300)
-        self.tree.column("Estado", width=120)
-        self.tree.column("Total USD", width=120, anchor="center")
+        self.arbol.heading("ID", text="ID")
+        self.arbol.heading("Fecha", text="Fecha")
+        self.arbol.heading("Vehículo", text="Vehículo")
+        self.arbol.heading("Cliente", text="Cliente")
+        self.arbol.heading("Descripción", text="Descripción")
+        self.arbol.heading("Estado", text="Estado")
+        self.arbol.heading("Total USD", text="Total USD")
+        self.arbol.column("ID", width=50)
+        self.arbol.column("Fecha", width=120)
+        self.arbol.column("Vehículo", width=120)
+        self.arbol.column("Cliente", width=150)
+        self.arbol.column("Descripción", width=300)
+        self.arbol.column("Estado", width=120)
+        self.arbol.column("Total USD", width=120, anchor="center")
 
-        scrollbar = ttk.Scrollbar(self.frame, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-        self.tree.pack(side="left", fill="both", expand=True)
+        scrollbar = ttk.Scrollbar(self.marco, orient="vertical", command=self.arbol.yview)
+        self.arbol.configure(yscrollcommand=scrollbar.set)
+        self.arbol.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
         self.cargar_datos()
 
     def cargar_datos(self):
-        for row in self.tree.get_children():
-            self.tree.delete(row)
-        ordenes = self.db.listar_ordenes_completas()
+        for row in self.arbol.get_children():
+            self.arbol.delete(row)
+        ordenes = self.bd.listar_ordenes_completas()
         if ordenes:
             for o in ordenes:
                 fecha = formatear_fecha(o['fecha'])
-                self.tree.insert("", "end", values=(
+                self.arbol.insert("", "end", values=(
                     o['id'],
                     fecha,
                     f"{o['marca']} {o['modelo']} ({o['placa']})",
@@ -118,53 +118,53 @@ class GestionServicios:
                     o['estado'],
                     f"${o.get('total_orden_usd', 0):.2f}"
                 ))
-        self.tree.update_idletasks()
+        self.arbol.update_idletasks()
 
     def obtener_seleccionado(self):
-        seleccion = self.tree.selection()
+        seleccion = self.arbol.selection()
         if not seleccion:
             messagebox.showwarning("Seleccionar", "Seleccione una orden primero")
             return None
-        item = self.tree.item(seleccion)
-        return item['values'][0]
+        elemento = self.arbol.item(seleccion)
+        return elemento['values'][0]
 
     def abrir_formulario_nueva_orden(self):
-        ventana = ctk.CTkToplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.padre)
         ventana.title("Nueva Orden de Servicio")
         ventana.geometry("600x450")
         ventana.resizable(False, False)
 
-        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
+        marco = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        marco.pack(fill="both", expand=True, padx=20, pady=20)
 
-        vehiculos = self.db.listar_vehiculos_con_cliente()
+        vehiculos = self.bd.listar_vehiculos_con_cliente()
         if not vehiculos:
             messagebox.showerror("Error", "No hay vehículos registrados. Cree un vehículo primero.", parent=ventana)
             ventana.destroy()
             return
 
-        vehiculos_map = {f"{v['cliente_nombre']} - {v['placa']} ({v['marca']} {v['modelo']})": v['id'] for v in vehiculos}
-        nombres_vehiculos = list(vehiculos_map.keys())
+        mapa_vehiculos = {f"{v['cliente_nombre']} - {v['placa']} ({v['marca']} {v['modelo']})": v['id'] for v in vehiculos}
+        nombres_vehiculos = list(mapa_vehiculos.keys())
 
-        ctk.CTkLabel(frame, text="Vehículo *:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
-        combo_vehiculo = ctk.CTkComboBox(frame, values=nombres_vehiculos, width=350, state="readonly")
-        combo_vehiculo.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+        ctk.CTkLabel(marco, text="Vehículo *:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        lista_vehiculo = ctk.CTkComboBox(marco, values=nombres_vehiculos, width=350, state="readonly")
+        lista_vehiculo.grid(row=0, column=1, padx=10, pady=10, sticky="w")
 
-        ctk.CTkLabel(frame, text="Descripción de la falla:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="ne")
-        txt_descripcion = ctk.CTkTextbox(frame, width=350, height=120)
+        ctk.CTkLabel(marco, text="Descripción de la falla:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="ne")
+        txt_descripcion = ctk.CTkTextbox(marco, width=350, height=120)
         txt_descripcion.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-        vcmd_total = registrar_validador(ventana, 10)
+        validar_total = registrar_validador(ventana, 10)
 
-        ctk.CTkLabel(frame, text="Total Orden (USD):", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
-        entry_total = ctk.CTkEntry(frame, width=150, validate="key", validatecommand=(vcmd_total, '%S', '%P'))
-        entry_total.grid(row=2, column=1, padx=10, pady=10, sticky="w")
-        entry_total.insert(0, "0.00")
+        ctk.CTkLabel(marco, text="Total Orden (USD):", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        campo_total = ctk.CTkEntry(marco, width=150, validate="key", validatecommand=(validar_total, '%S', '%P'))
+        campo_total.grid(row=2, column=1, padx=10, pady=10, sticky="w")
+        campo_total.insert(0, "0.00")
 
         def guardar():
-            vehiculo_seleccionado = combo_vehiculo.get()
+            vehiculo_seleccionado = lista_vehiculo.get()
             descripcion = txt_descripcion.get("1.0", ctk.END).strip()
-            total_str = entry_total.get().strip()
+            total_str = campo_total.get().strip()
 
             if not vehiculo_seleccionado:
                 messagebox.showerror("Error", "Seleccione un vehículo", parent=ventana)
@@ -181,15 +181,15 @@ class GestionServicios:
                 messagebox.showerror("Error", "Ingrese un total válido (número positivo)", parent=ventana)
                 return
 
-            vehiculo_id = vehiculos_map.get(vehiculo_seleccionado)
+            vehiculo_id = mapa_vehiculos.get(vehiculo_seleccionado)
             if not vehiculo_id:
                 messagebox.showerror("Error", "Vehículo no válido", parent=ventana)
                 return
 
             try:
-                exito, mensaje, nuevo_id = self.db.crear_orden(vehiculo_id, descripcion, "Ingresado", total_orden)
+                exito, mensaje, nuevo_id = self.bd.crear_orden(vehiculo_id, descripcion, "Ingresado", total_orden)
                 if exito:
-                    self.db.registrar_log(
+                    self.bd.registrar_log(
                         usuario_id=self.usuario_id,
                         usuario_nombre=self.usuario_actual,
                         tabla="ordenes",
@@ -200,27 +200,27 @@ class GestionServicios:
                     messagebox.showinfo("Éxito", "Orden creada correctamente", parent=ventana)
                     ventana.destroy()
                     self.cargar_datos()
-                    self.tree.update_idletasks()
-                    self.tree.update()
+                    self.arbol.update_idletasks()
+                    self.arbol.update()
                 else:
                     messagebox.showerror("Error", mensaje, parent=ventana)
             except Exception as e:
                 messagebox.showerror("Error", f"Error inesperado al guardar la orden: {e}", parent=ventana)
 
-        btn_guardar = ctk.CTkButton(frame, text="Crear Orden", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=guardar)
-        btn_guardar.grid(row=3, column=0, columnspan=2, pady=20)
+        boton_guardar = ctk.CTkButton(marco, text="Crear Orden", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=guardar)
+        boton_guardar.grid(row=3, column=0, columnspan=2, pady=20)
 
     def abrir_ventana_pago(self):
         id_orden = self.obtener_seleccionado()
         if not id_orden:
             return
 
-        datos = self.db.obtener_orden_completa(id_orden)
+        datos = self.bd.obtener_orden_completa(id_orden)
         if not datos:
             messagebox.showerror("Error", "No se encontró la orden")
             return
 
-        finanzas = self.db.obtener_detalle_orden_pagos(id_orden)
+        finanzas = self.bd.obtener_detalle_orden_pagos(id_orden)
         if not finanzas:
             finanzas = {'total_orden_usd': 0, 'total_pagado': 0}
 
@@ -229,89 +229,89 @@ class GestionServicios:
         saldo = max(0, total - pagado)
 
         if saldo <= 0:
-            messagebox.showinfo("Aviso", "Esta orden ya está completamente pagada")
+            messagebox.showinfo("Aviso", "Esta orden ya está completamente pagada", parent=self.padre)
             return
 
-        ventana = ctk.CTkToplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.padre)
         ventana.title(f"Registrar Pago - Orden #{id_orden}")
         ventana.geometry("600x500")
         ventana.resizable(False, False)
 
-        main_frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        marco_principal = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        marco_principal.pack(fill="both", expand=True, padx=20, pady=20)
 
-        ctk.CTkLabel(main_frame, text=f"Orden #{id_orden}", font=("Inter", 16, "bold"), text_color=TEXTO_BLANCO).pack(anchor="w", pady=(0, 5))
-        ctk.CTkLabel(main_frame, text=f"Cliente: {datos['cliente_nombre']}", text_color=TEXTO_GRIS).pack(anchor="w")
-        ctk.CTkLabel(main_frame, text=f"Vehículo: {datos['marca']} {datos['modelo']} ({datos['placa']})", text_color=TEXTO_GRIS).pack(anchor="w")
-        ctk.CTkLabel(main_frame, text=f"Descripción: {datos['descripcion'][:60]}...", text_color=TEXTO_GRIS).pack(anchor="w", pady=(0, 10))
+        ctk.CTkLabel(marco_principal, text=f"Orden #{id_orden}", font=("Inter", 16, "bold"), text_color=TEXTO_BLANCO).pack(anchor="w", pady=(0, 5))
+        ctk.CTkLabel(marco_principal, text=f"Cliente: {datos['cliente_nombre']}", text_color=TEXTO_GRIS).pack(anchor="w")
+        ctk.CTkLabel(marco_principal, text=f"Vehículo: {datos['marca']} {datos['modelo']} ({datos['placa']})", text_color=TEXTO_GRIS).pack(anchor="w")
+        ctk.CTkLabel(marco_principal, text=f"Descripción: {datos['descripcion'][:60]}...", text_color=TEXTO_GRIS).pack(anchor="w", pady=(0, 10))
 
-        resumen_frame = ctk.CTkFrame(main_frame, fg_color=FONDO_SIDEBAR, corner_radius=10)
-        resumen_frame.pack(fill="x", pady=10)
+        marco_resumen = ctk.CTkFrame(marco_principal, fg_color=FONDO_SIDEBAR, corner_radius=10)
+        marco_resumen.pack(fill="x", pady=10)
 
-        ctk.CTkLabel(resumen_frame, text=f"Total: ${total:.2f} USD", text_color=TEXTO_BLANCO).pack(side="left", padx=15, pady=5)
-        ctk.CTkLabel(resumen_frame, text=f"Pagado: ${pagado:.2f} USD", text_color=COLOR_VERDE).pack(side="left", padx=15, pady=5)
-        ctk.CTkLabel(resumen_frame, text=f"Saldo: ${saldo:.2f} USD", text_color=COLOR_ACENTO, font=("Inter", 12, "bold")).pack(side="left", padx=15, pady=5)
+        ctk.CTkLabel(marco_resumen, text=f"Total: ${total:.2f} USD", text_color=TEXTO_BLANCO).pack(side="left", padx=15, pady=5)
+        ctk.CTkLabel(marco_resumen, text=f"Pagado: ${pagado:.2f} USD", text_color=COLOR_VERDE).pack(side="left", padx=15, pady=5)
+        ctk.CTkLabel(marco_resumen, text=f"Saldo: ${saldo:.2f} USD", text_color=COLOR_ACENTO, font=("Inter", 12, "bold")).pack(side="left", padx=15, pady=5)
 
-        form_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        form_frame.pack(fill="x", pady=10)
+        marco_formulario = ctk.CTkFrame(marco_principal, fg_color="transparent")
+        marco_formulario.pack(fill="x", pady=10)
 
-        ctk.CTkLabel(form_frame, text="Moneda:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=5, pady=5, sticky="e")
-        combo_moneda = ctk.CTkComboBox(form_frame, values=["USD", "COP", "BS"], width=120, state="readonly")
-        combo_moneda.grid(row=0, column=1, padx=5, pady=5, sticky="w")
-        combo_moneda.set("USD")
+        ctk.CTkLabel(marco_formulario, text="Moneda:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=5, pady=5, sticky="e")
+        lista_moneda = ctk.CTkComboBox(marco_formulario, values=["USD", "COP", "BS"], width=120, state="readonly")
+        lista_moneda.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        lista_moneda.set("USD")
 
-        vcmd_tasa = registrar_validador(ventana, 12)
-        vcmd_monto = registrar_validador(ventana, 12)
+        validar_tasa = registrar_validador(ventana, 12)
+        validar_monto = registrar_validador(ventana, 12)
 
-        ctk.CTkLabel(form_frame, text="Tasa (1 USD =):", text_color=TEXTO_BLANCO).grid(row=0, column=2, padx=5, pady=5, sticky="e")
-        entry_tasa = ctk.CTkEntry(form_frame, width=120, validate="key", validatecommand=(vcmd_tasa, '%S', '%P'))
-        entry_tasa.grid(row=0, column=3, padx=5, pady=5, sticky="w")
-        entry_tasa.insert(0, "1.00")
+        ctk.CTkLabel(marco_formulario, text="Tasa (1 USD =):", text_color=TEXTO_BLANCO).grid(row=0, column=2, padx=5, pady=5, sticky="e")
+        campo_tasa = ctk.CTkEntry(marco_formulario, width=120, validate="key", validatecommand=(validar_tasa, '%S', '%P'))
+        campo_tasa.grid(row=0, column=3, padx=5, pady=5, sticky="w")
+        campo_tasa.insert(0, "1.00")
 
-        ctk.CTkLabel(form_frame, text="Monto:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=5, pady=5, sticky="e")
-        entry_monto = ctk.CTkEntry(form_frame, width=150, validate="key", validatecommand=(vcmd_monto, '%S', '%P'))
-        entry_monto.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+        ctk.CTkLabel(marco_formulario, text="Monto:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=5, pady=5, sticky="e")
+        campo_monto = ctk.CTkEntry(marco_formulario, width=150, validate="key", validatecommand=(validar_monto, '%S', '%P'))
+        campo_monto.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
-        ctk.CTkLabel(form_frame, text="Método:", text_color=TEXTO_BLANCO).grid(row=1, column=2, padx=5, pady=5, sticky="e")
-        combo_metodo = ctk.CTkComboBox(form_frame, values=["Efectivo", "Transferencia", "Pago Movil", "Zelle", "Otro"], width=150, state="readonly")
-        combo_metodo.grid(row=1, column=3, padx=5, pady=5, sticky="w")
-        combo_metodo.set("Efectivo")
+        ctk.CTkLabel(marco_formulario, text="Método:", text_color=TEXTO_BLANCO).grid(row=1, column=2, padx=5, pady=5, sticky="e")
+        lista_metodo = ctk.CTkComboBox(marco_formulario, values=["Efectivo", "Transferencia", "Pago Movil", "Zelle", "Otro"], width=150, state="readonly")
+        lista_metodo.grid(row=1, column=3, padx=5, pady=5, sticky="w")
+        lista_metodo.set("Efectivo")
 
-        ctk.CTkLabel(form_frame, text="Referencia:", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=5, pady=5, sticky="e")
-        entry_referencia = ctk.CTkEntry(form_frame, width=350)
-        entry_referencia.grid(row=2, column=1, columnspan=3, padx=5, pady=5, sticky="w")
+        ctk.CTkLabel(marco_formulario, text="Referencia:", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=5, pady=5, sticky="e")
+        campo_referencia = ctk.CTkEntry(marco_formulario, width=350)
+        campo_referencia.grid(row=2, column=1, columnspan=3, padx=5, pady=5, sticky="w")
 
-        def cambiar_moneda(choice):
-            entry_tasa.delete(0, ctk.END)
-            if choice == "USD":
-                entry_tasa.insert(0, "1.00")
-            elif choice == "COP":
-                entry_tasa.insert(0, "4000.00")
-            elif choice == "BS":
-                entry_tasa.insert(0, "45.00")
+        def cambiar_moneda(opcion):
+            campo_tasa.delete(0, ctk.END)
+            if opcion == "USD":
+                campo_tasa.insert(0, "1.00")
+            elif opcion == "COP":
+                campo_tasa.insert(0, "4000.00")
+            elif opcion == "BS":
+                campo_tasa.insert(0, "45.00")
 
-        combo_moneda.configure(command=cambiar_moneda)
+        lista_moneda.configure(command=cambiar_moneda)
 
         def registrar_pago():
             try:
-                tasa = float(entry_tasa.get().strip())
-                monto = float(entry_monto.get().strip())
+                tasa = float(campo_tasa.get().strip())
+                monto = float(campo_monto.get().strip())
                 if tasa <= 0 or monto <= 0:
                     raise ValueError
             except ValueError:
                 messagebox.showerror("Error", "Tasa y monto deben ser números positivos", parent=ventana)
                 return
 
-            moneda = combo_moneda.get()
+            moneda = lista_moneda.get()
             monto_ref_usd = monto if moneda == "USD" else (monto / tasa)
-            metodo = combo_metodo.get()
-            referencia = entry_referencia.get().strip()
+            metodo = lista_metodo.get()
+            referencia = campo_referencia.get().strip()
 
             if monto_ref_usd > saldo:
                 messagebox.showerror("Error", f"El monto en USD (${monto_ref_usd:.2f}) supera el saldo pendiente (${saldo:.2f})", parent=ventana)
                 return
 
-            exito, mensaje, _ = self.db.registrar_pago(
+            exito, mensaje, _ = self.bd.registrar_pago(
                 id_orden, monto, moneda, tasa, monto_ref_usd, metodo, referencia
             )
 
@@ -319,368 +319,105 @@ class GestionServicios:
                 messagebox.showinfo("Éxito", "Pago registrado correctamente", parent=ventana)
                 ventana.destroy()
                 self.cargar_datos()
-                self.tree.update_idletasks()
-                self.tree.update()
+                self.arbol.update_idletasks()
+                self.arbol.update()
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = ctk.CTkButton(main_frame, text="Registrar Pago", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=registrar_pago)
-        btn_guardar.pack(pady=15)
+        boton_guardar = ctk.CTkButton(marco_principal, text="Registrar Pago", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=registrar_pago)
+        boton_guardar.pack(pady=15)
 
-        btn_cancelar = ctk.CTkButton(main_frame, text="Cancelar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO, command=ventana.destroy)
-        btn_cancelar.pack(pady=5)
+        boton_cancelar = ctk.CTkButton(marco_principal, text="Cancelar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO, command=ventana.destroy)
+        boton_cancelar.pack(pady=5)
 
     def abrir_detalle_orden(self):
+        """Vista de solo lectura con los datos de la orden."""
         id_orden = self.obtener_seleccionado()
         if not id_orden:
             return
 
-        datos = self.db.obtener_orden_completa(id_orden)
+        datos = self.bd.obtener_orden_completa(id_orden)
         if not datos:
-            messagebox.showerror("Error", "No se encontró la orden")
+            messagebox.showerror("Error", "No se encontró la orden", parent=self.padre)
             return
 
-        finanzas = self.db.obtener_detalle_orden_pagos(id_orden)
-        if not finanzas:
-            finanzas = {'total_orden_usd': 0, 'total_pagado': 0}
-        pagos = self.db.listar_pagos_por_orden(id_orden)
-
-        ventana = ctk.CTkToplevel(self.parent)
-        ventana.title(f"Detalle de Orden #{id_orden}")
-        ventana.geometry("900x700")
-        ventana.resizable(False, False)
-
-        tabview = ctk.CTkTabview(ventana, fg_color=FONDO_SIDEBAR)
-        tabview.pack(fill="both", expand=True, padx=10, pady=10)
-
-        tab_info = tabview.add("📋 Información")
-        tab_pagos = tabview.add("💰 Pagos")
-        tab_repuestos = tabview.add("🔧 Repuestos")
-
-        frame_info = ctk.CTkFrame(tab_info, fg_color=FONDO_TARJETA)
-        frame_info.pack(fill="both", expand=True, padx=10, pady=10)
-
-        ctk.CTkLabel(frame_info, text=f"ID: {datos['id']}", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
-        ctk.CTkLabel(frame_info, text=f"Fecha: {datos['fecha']}", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
-        ctk.CTkLabel(frame_info, text=f"Vehículo: {datos['marca']} {datos['modelo']} ({datos['placa']})", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
-        ctk.CTkLabel(frame_info, text=f"Cliente: {datos['cliente_nombre']}", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
-        ctk.CTkLabel(frame_info, text=f"Estado: {datos['estado']}", text_color=COLOR_ACENTO, font=("Inter", 12, "bold")).pack(anchor="w", padx=10, pady=5)
-        ctk.CTkLabel(frame_info, text="Descripción:", text_color=TEXTO_BLANCO, font=("Inter", 12)).pack(anchor="w", padx=10, pady=5)
-        ctk.CTkLabel(frame_info, text=datos['descripcion'], text_color=TEXTO_GRIS, wraplength=500, justify="left").pack(anchor="w", padx=10, pady=5)
-
-        frame_pagos = ctk.CTkFrame(tab_pagos, fg_color=FONDO_TARJETA)
-        frame_pagos.pack(fill="both", expand=True, padx=10, pady=10)
-
-        resumen_frame = ctk.CTkFrame(frame_pagos, fg_color=FONDO_SIDEBAR, corner_radius=10)
-        resumen_frame.pack(fill="x", pady=5)
-
-        total = finanzas['total_orden_usd'] or 0
-        pagado = finanzas['total_pagado'] or 0
+        finanzas = self.bd.obtener_detalle_orden_pagos(id_orden) or {}
+        total = finanzas.get('total_orden_usd') or 0
+        pagado = finanzas.get('total_pagado') or 0
         saldo = max(0, total - pagado)
 
-        ctk.CTkLabel(resumen_frame, text=f"Total: ${total:.2f} USD", text_color=TEXTO_BLANCO).pack(side="left", padx=15, pady=5)
-        ctk.CTkLabel(resumen_frame, text=f"Pagado: ${pagado:.2f} USD", text_color=COLOR_VERDE).pack(side="left", padx=15, pady=5)
-        ctk.CTkLabel(resumen_frame, text=f"Saldo: ${saldo:.2f} USD", text_color=COLOR_ACENTO if saldo > 0 else COLOR_VERDE, font=("Inter", 12, "bold")).pack(side="left", padx=15, pady=5)
+        ventana = ctk.CTkToplevel(self.padre)
+        ventana.title(f"Detalle de Orden #{id_orden}")
+        ventana.geometry("540x520")
+        ventana.resizable(False, False)
 
-        tree_pagos = ttk.Treeview(
-            frame_pagos,
-            columns=("ID", "Monto", "Moneda", "Tasa", "Monto USD", "Fecha", "Método", "Referencia"),
-            show="headings"
-        )
-        encabezados = [("ID", 50), ("Monto", 100), ("Moneda", 80), ("Tasa", 80), ("Monto USD", 100), ("Fecha", 120), ("Método", 100), ("Referencia", 100)]
-        for col, width in encabezados:
-            tree_pagos.heading(col, text=col)
-            tree_pagos.column(col, width=width, anchor="center")
+        marco = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        marco.pack(fill="both", expand=True, padx=10, pady=10)
 
-        scroll = ttk.Scrollbar(frame_pagos, orient="vertical", command=tree_pagos.yview)
-        tree_pagos.configure(yscrollcommand=scroll.set)
-        tree_pagos.pack(side="left", fill="both", expand=True, pady=5)
-        scroll.pack(side="right", fill="y")
+        ctk.CTkLabel(marco, text="Datos de la orden", text_color=TEXTO_BLANCO,
+                     font=("Inter", 13, "bold")).pack(anchor="w", padx=10, pady=(10, 5))
 
-        for p in pagos:
-            tree_pagos.insert("", "end", values=(
-                p['id'],
-                f"{p['monto_original']:.2f}",
-                p['moneda'],
-                f"{p['tasa_cambio']:.2f}",
-                f"{p['monto_ref_usd']:.2f}",
-                formatear_fecha(p['fecha_pago']),
-                p['metodo_pago'],
-                p['referencia'] or ""
-            ))
+        filas = [
+            f"ID: {datos['id']}",
+            f"Fecha: {datos['fecha']}",
+            f"Vehículo: {datos['marca']} {datos['modelo']} ({datos['placa']})",
+            f"Cliente: {datos['cliente_nombre']}",
+        ]
+        for fila in filas:
+            ctk.CTkLabel(marco, text=fila, text_color=TEXTO_BLANCO,
+                         font=("Inter", 12)).pack(anchor="w", padx=10, pady=4)
 
-        if self.rol in ['admin', 'secretaria'] and saldo > 0:
-            form_frame = ctk.CTkFrame(frame_pagos, fg_color=FONDO_SIDEBAR, corner_radius=10)
-            form_frame.pack(fill="x", pady=5)
+        ctk.CTkLabel(marco, text=f"Estado: {datos['estado']}", text_color=COLOR_ACENTO,
+                     font=("Inter", 12, "bold")).pack(anchor="w", padx=10, pady=4)
+        ctk.CTkLabel(marco, text="Descripción:", text_color=TEXTO_BLANCO,
+                     font=("Inter", 12)).pack(anchor="w", padx=10, pady=4)
+        ctk.CTkLabel(marco, text=datos['descripcion'], text_color=TEXTO_GRIS,
+                     wraplength=470, justify="left").pack(anchor="w", padx=10, pady=4)
 
-            ctk.CTkLabel(form_frame, text="Registrar Pago", font=("Inter", 12, "bold"), text_color=TEXTO_BLANCO).pack(anchor="w", padx=10, pady=5)
+        marco_resumen = ctk.CTkFrame(marco, fg_color=FONDO_SIDEBAR, corner_radius=10)
+        marco_resumen.pack(fill="x", padx=10, pady=15)
+        ctk.CTkLabel(marco_resumen, text=f"Total: ${total:.2f} USD",
+                     text_color=TEXTO_BLANCO).pack(side="left", padx=15, pady=8)
+        ctk.CTkLabel(marco_resumen, text=f"Pagado: ${pagado:.2f} USD",
+                     text_color=COLOR_VERDE).pack(side="left", padx=15, pady=8)
+        ctk.CTkLabel(marco_resumen, text=f"Saldo: ${saldo:.2f} USD",
+                     text_color=COLOR_ACENTO if saldo > 0 else COLOR_VERDE,
+                     font=("Inter", 12, "bold")).pack(side="left", padx=15, pady=8)
 
-            grid = ctk.CTkFrame(form_frame, fg_color="transparent")
-            grid.pack(fill="x", padx=10, pady=5)
-
-            ctk.CTkLabel(grid, text="Moneda:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=5, pady=5)
-            combo_moneda = ctk.CTkComboBox(grid, values=["USD", "COP", "BS"], width=90, state="readonly")
-            combo_moneda.grid(row=0, column=1, padx=5, pady=5)
-            combo_moneda.set("USD")
-
-            ctk.CTkLabel(grid, text="Tasa (1 USD):", text_color=TEXTO_BLANCO).grid(row=0, column=2, padx=5, pady=5)
-            vcmd_tasa = registrar_validador(ventana, 12)
-            vcmd_monto = registrar_validador(ventana, 12)
-            entry_tasa = ctk.CTkEntry(grid, width=90, validate="key", validatecommand=(vcmd_tasa, '%S', '%P'))
-            entry_tasa.grid(row=0, column=3, padx=5, pady=5)
-            entry_tasa.insert(0, "1.00")
-
-            ctk.CTkLabel(grid, text="Monto:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=5, pady=5)
-            entry_monto = ctk.CTkEntry(grid, width=120, validate="key", validatecommand=(vcmd_monto, '%S', '%P'))
-            entry_monto.grid(row=1, column=1, padx=5, pady=5)
-
-            ctk.CTkLabel(grid, text="Método:", text_color=TEXTO_BLANCO).grid(row=1, column=2, padx=5, pady=5)
-            combo_metodo = ctk.CTkComboBox(grid, values=["Efectivo", "Transferencia", "Pago Movil", "Zelle", "Otro"], width=120, state="readonly")
-            combo_metodo.grid(row=1, column=3, padx=5, pady=5)
-            combo_metodo.set("Efectivo")
-
-            ctk.CTkLabel(grid, text="Referencia:", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=5, pady=5)
-            entry_referencia = ctk.CTkEntry(grid, width=300)
-            entry_referencia.grid(row=2, column=1, columnspan=3, padx=5, pady=5, sticky="w")
-
-            def cambiar_moneda(choice):
-                entry_tasa.delete(0, ctk.END)
-                if choice == "USD":
-                    entry_tasa.insert(0, "1.00")
-                elif choice == "COP":
-                    entry_tasa.insert(0, "4000.00")
-                elif choice == "BS":
-                    entry_tasa.insert(0, "45.00")
-
-            combo_moneda.configure(command=cambiar_moneda)
-
-            def registrar_pago_detalle():
-                try:
-                    tasa = float(entry_tasa.get().strip())
-                    monto = float(entry_monto.get().strip())
-                    if tasa <= 0 or monto <= 0:
-                        raise ValueError
-                except ValueError:
-                    messagebox.showerror("Error", "Tasa y monto deben ser números válidos", parent=ventana)
-                    return
-
-                moneda = combo_moneda.get()
-                monto_ref_usd = monto if moneda == "USD" else (monto / tasa)
-                metodo = combo_metodo.get()
-                referencia = entry_referencia.get().strip()
-
-                if monto_ref_usd > saldo:
-                    messagebox.showerror("Error", f"El monto en USD (${monto_ref_usd:.2f}) supera el saldo pendiente (${saldo:.2f})", parent=ventana)
-                    return
-
-                exito, mensaje, _ = self.db.registrar_pago(
-                    id_orden, monto, moneda, tasa, monto_ref_usd, metodo, referencia
-                )
-
-                if exito:
-                    messagebox.showinfo("Éxito", "Pago registrado correctamente", parent=ventana)
-                    ventana.destroy()
-                    self.cargar_datos()
-                    self.abrir_detalle_orden()
-                else:
-                    messagebox.showerror("Error", mensaje, parent=ventana)
-
-            btn_guardar = ctk.CTkButton(form_frame, text="Registrar Pago", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=registrar_pago_detalle)
-            btn_guardar.pack(pady=10)
-
-        elif saldo <= 0:
-            ctk.CTkLabel(frame_pagos, text="✅ Esta orden está completamente pagada", text_color=COLOR_VERDE, font=("Inter", 12, "bold")).pack(pady=10)
-
-        self._construir_tab_repuestos(tab_repuestos, id_orden, ventana)
-
-        btn_cerrar = ctk.CTkButton(frame_pagos, text="Cerrar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO, command=ventana.destroy)
-        btn_cerrar.pack(pady=10)
-
-    def _construir_tab_repuestos(self, tab, id_orden, ventana):
-        frame = ctk.CTkFrame(tab, fg_color=FONDO_TARJETA)
-        frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-        resumen = ctk.CTkFrame(frame, fg_color=FONDO_SIDEBAR, corner_radius=10)
-        resumen.pack(fill="x", pady=5)
-        lbl_subtotal = ctk.CTkLabel(
-            resumen, text="Repuestos: $0.00 USD",
-            font=("Inter", 12, "bold"), text_color=TEXTO_BLANCO
-        )
-        lbl_subtotal.pack(side="left", padx=15, pady=5)
-
-        puede_editar = self.rol in ['admin', 'secretaria']
-
-        combo_repuesto = None
-        entry_cantidad = None
-        entry_precio = None
-        rep_map = {}
-        nombres = []
-
-        if puede_editar:
-            form = ctk.CTkFrame(frame, fg_color=FONDO_SIDEBAR, corner_radius=10)
-            form.pack(side="bottom", fill="x", pady=5)
-
-            ctk.CTkLabel(form, text="Repuesto:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=5, pady=5, sticky="e")
-            combo_repuesto = ctk.CTkComboBox(form, values=[], width=260, state="readonly")
-            combo_repuesto.grid(row=0, column=1, padx=5, pady=5, sticky="w")
-
-            ctk.CTkLabel(form, text="Cantidad:", text_color=TEXTO_BLANCO).grid(row=0, column=2, padx=5, pady=5, sticky="e")
-            entry_cantidad = ctk.CTkEntry(form, width=80)
-            entry_cantidad.grid(row=0, column=3, padx=5, pady=5, sticky="w")
-
-            ctk.CTkLabel(form, text="Precio USD:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=5, pady=5, sticky="e")
-            entry_precio = ctk.CTkEntry(form, width=100)
-            entry_precio.grid(row=1, column=1, padx=5, pady=5, sticky="w")
-
-            btn_agregar = ctk.CTkButton(form, text="+ Agregar", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, width=120)
-            btn_agregar.grid(row=1, column=2, padx=5, pady=5)
-            btn_quitar = ctk.CTkButton(form, text="🗑 Quitar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO, width=120)
-            btn_quitar.grid(row=1, column=3, padx=5, pady=5)
-
-        tree_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        tree_frame.pack(fill="both", expand=True, pady=5)
-
-        tree = ttk.Treeview(
-            tree_frame,
-            columns=("ID", "Repuesto", "Cantidad", "Precio", "Subtotal"),
-            show="headings"
-        )
-        for col, width in [("ID", 50), ("Repuesto", 240), ("Cantidad", 80), ("Precio", 100), ("Subtotal", 100)]:
-            tree.heading(col, text=col)
-            tree.column(col, width=width, anchor="w" if col == "Repuesto" else "center")
-
-        scroll = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
-        tree.configure(yscrollcommand=scroll.set)
-        tree.pack(side="left", fill="both", expand=True)
-        scroll.pack(side="right", fill="y")
-
-        def recargar_combo():
-            nonlocal rep_map, nombres
-            repuestos = self.db.listar_repuestos() or []
-            rep_map = {f"{r['nombre']} (stock: {r['stock']})": r for r in repuestos}
-            nombres = list(rep_map.keys())
-            if combo_repuesto is not None:
-                combo_repuesto.configure(values=nombres)
-
-        def cargar():
-            for row in tree.get_children():
-                tree.delete(row)
-            items = self.db.listar_repuestos_por_orden(id_orden) or []
-            total = 0.0
-            for it in items:
-                total += float(it['subtotal'] or 0)
-                tree.insert("", "end", iid=str(it['orden_repuesto_id']), values=(
-                    it['repuesto_id'],
-                    it['nombre'],
-                    it['cantidad'],
-                    f"${it['precio_unitario']:.2f}",
-                    f"${it['subtotal']:.2f}"
-                ))
-            lbl_subtotal.configure(text=f"Repuestos: ${total:.2f} USD")
-
-        def al_elegir(choice):
-            rep = rep_map.get(choice)
-            if rep and entry_precio is not None:
-                entry_precio.delete(0, ctk.END)
-                entry_precio.insert(0, f"{float(rep['precio']):.2f}")
-
-        if puede_editar:
-            combo_repuesto.configure(command=al_elegir)
-
-            def agregar():
-                rep = rep_map.get(combo_repuesto.get())
-                if not rep:
-                    messagebox.showerror("Error", "Seleccione un repuesto", parent=ventana)
-                    return
-                try:
-                    cantidad = int(entry_cantidad.get().strip() or "0")
-                    precio = float(entry_precio.get().strip() or "0")
-                except ValueError:
-                    messagebox.showerror("Error", "Cantidad y precio deben ser números válidos", parent=ventana)
-                    return
-                if cantidad <= 0:
-                    messagebox.showerror("Error", "La cantidad debe ser mayor a 0", parent=ventana)
-                    return
-
-                exito, mensaje = self.db.agregar_repuesto_a_orden(id_orden, rep['id'], cantidad, precio)
-                if not exito:
-                    messagebox.showerror("Error", mensaje, parent=ventana)
-                    return
-
-                self.db.registrar_movimiento(rep['id'], "SALIDA", cantidad,
-                                             f"Usado en orden #{id_orden}", self.usuario_id, self.usuario_actual)
-                self.db.registrar_log(self.usuario_id, self.usuario_actual, "orden_repuestos", id_orden,
-                                      "INSERT", f"Repuesto '{rep['nombre']}' x{cantidad} en orden #{id_orden}")
-                entry_cantidad.delete(0, ctk.END)
-                entry_precio.delete(0, ctk.END)
-                combo_repuesto.set("")
-                recargar_combo()
-                cargar()
-
-            def quitar():
-                seleccion = tree.selection()
-                if not seleccion:
-                    messagebox.showwarning("Seleccionar", "Seleccione un repuesto de la lista", parent=ventana)
-                    return
-                orp_id = int(seleccion[0])
-                valores = tree.item(seleccion[0])['values']
-                repuesto_id = int(float(valores[0]))
-                nombre = valores[1]
-                cantidad = int(float(valores[2]))
-
-                if not messagebox.askyesno("Confirmar", f"¿Quitar '{nombre}' de la orden? Se devolverá al stock.", parent=ventana):
-                    return
-
-                exito, mensaje = self.db.eliminar_orden_repuesto(orp_id)
-                if not exito:
-                    messagebox.showerror("Error", mensaje, parent=ventana)
-                    return
-
-                self.db.incrementar_stock(repuesto_id, cantidad)
-                self.db.registrar_movimiento(repuesto_id, "ENTRADA", cantidad,
-                                             f"Devuelto de orden #{id_orden}", self.usuario_id, self.usuario_actual)
-                self.db.registrar_log(self.usuario_id, self.usuario_actual, "orden_repuestos", id_orden,
-                                      "DELETE", f"Repuesto '{nombre}' x{cantidad} quitado de orden #{id_orden}")
-                recargar_combo()
-                cargar()
-
-            btn_agregar.configure(command=agregar)
-            btn_quitar.configure(command=quitar)
-
-        recargar_combo()
-        cargar()
+        ctk.CTkButton(marco, text="Cerrar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
+                      command=ventana.destroy).pack(pady=10)
 
     def cambiar_estado(self):
         id_orden = self.obtener_seleccionado()
         if not id_orden:
             return
 
-        datos = self.db.obtener_orden_completa(id_orden)
+        datos = self.bd.obtener_orden_completa(id_orden)
         if not datos:
-            messagebox.showerror("Error", "No se encontró la orden", parent=self.frame)
+            messagebox.showerror("Error", "No se encontró la orden", parent=self.marco)
             return
 
         estado_actual = datos['estado']
         estados = ['Ingresado', 'Revisión', 'Trabajando', 'Completado', 'Entregado']
 
-        ventana = ctk.CTkToplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.padre)
         ventana.title("Cambiar Estado")
         ventana.geometry("300x250")
         ventana.resizable(False, False)
 
-        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
+        marco = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        marco.pack(fill="both", expand=True, padx=20, pady=20)
 
-        ctk.CTkLabel(frame, text="Estado actual:", text_color=TEXTO_BLANCO, font=("Inter", 10)).pack(pady=5)
-        ctk.CTkLabel(frame, text=f"🔹 {estado_actual}", text_color=COLOR_ACENTO, font=("Inter", 10, "bold")).pack(pady=5)
+        ctk.CTkLabel(marco, text="Estado actual:", text_color=TEXTO_BLANCO, font=("Inter", 10)).pack(pady=5)
+        ctk.CTkLabel(marco, text=f"🔹 {estado_actual}", text_color=COLOR_ACENTO, font=("Inter", 10, "bold")).pack(pady=5)
 
-        ctk.CTkLabel(frame, text="Seleccione nuevo estado:", text_color=TEXTO_BLANCO).pack(pady=5)
-        combo_estado = ctk.CTkComboBox(frame, values=estados, width=200, state="readonly")
-        combo_estado.pack(pady=5)
-        combo_estado.set(estado_actual)
+        ctk.CTkLabel(marco, text="Seleccione nuevo estado:", text_color=TEXTO_BLANCO).pack(pady=5)
+        lista_estado = ctk.CTkComboBox(marco, values=estados, width=200, state="readonly")
+        lista_estado.pack(pady=5)
+        lista_estado.set(estado_actual)
 
         def actualizar():
-            nuevo_estado = combo_estado.get()
+            nuevo_estado = lista_estado.get()
             if not nuevo_estado:
                 messagebox.showerror("Error", "Seleccione un estado", parent=ventana)
                 return
@@ -689,9 +426,9 @@ class GestionServicios:
                 ventana.destroy()
                 return
 
-            exito, mensaje = self.db.actualizar_estado_orden(id_orden, nuevo_estado)
+            exito, mensaje = self.bd.actualizar_estado_orden(id_orden, nuevo_estado)
             if exito:
-                self.db.registrar_log(
+                self.bd.registrar_log(
                     usuario_id=self.usuario_id,
                     usuario_nombre=self.usuario_actual,
                     tabla="ordenes",
@@ -702,38 +439,54 @@ class GestionServicios:
                 messagebox.showinfo("Éxito", f"Estado actualizado a '{nuevo_estado}'")
                 ventana.destroy()
                 self.cargar_datos()
-                self.tree.update_idletasks()
-                self.tree.update()
+                self.arbol.update_idletasks()
+                self.arbol.update()
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        combo_estado.bind("<Key-Return>", lambda e: actualizar())
+        lista_estado.bind("<Key-Return>", lambda e: actualizar())
 
-        btn_guardar = ctk.CTkButton(
-            frame,
+        boton_guardar = ctk.CTkButton(
+            marco,
             text="Guardar",
             fg_color=COLOR_VERDE,
             text_color=TEXTO_BLANCO,
             command=actualizar
         )
-        btn_guardar.pack(pady=10)
+        boton_guardar.pack(pady=10)
 
     def eliminar_orden(self):
         id_orden = self.obtener_seleccionado()
         if not id_orden:
             return
-        if messagebox.askyesno("Confirmar", "¿Eliminar esta orden permanentemente?"):
-            exito, mensaje = self.db.eliminar_orden(id_orden)
-            if exito:
-                self.db.registrar_log(
-                    usuario_id=self.usuario_id,
-                    usuario_nombre=self.usuario_actual,
-                    tabla="ordenes",
-                    registro_id=id_orden,
-                    accion="DELETE",
-                    descripcion=f"Eliminada orden ID {id_orden}"
-                )
-                messagebox.showinfo("Éxito", "Orden eliminada", parent=self.frame)
-                self.cargar_datos()
-                self.tree.update_idletasks()
-                self.tree.update()
+
+        # Los pagos se borran en cascada con la orden, asi que se impide perder ese registro.
+        finanzas = self.bd.obtener_detalle_orden_pagos(id_orden) or {}
+        pagado = finanzas.get('total_pagado') or 0
+        if pagado > 0:
+            messagebox.showwarning(
+                "No se puede eliminar",
+                f"Esta orden tiene ${float(pagado):,.2f} USD registrados en pagos.\n\n"
+                "Si se eliminara, ese dinero se perdería del registro.\n"
+                "Las órdenes con pagos asociados no se pueden eliminar.",
+                parent=self.marco
+            )
+            return
+
+        if not messagebox.askyesno("Confirmar", "¿Eliminar esta orden permanentemente?", parent=self.marco):
+            return
+
+        exito, mensaje = self.bd.eliminar_orden(id_orden)
+        if exito:
+            self.bd.registrar_log(
+                usuario_id=self.usuario_id,
+                usuario_nombre=self.usuario_actual,
+                tabla="ordenes",
+                registro_id=id_orden,
+                accion="DELETE",
+                descripcion=f"Eliminada orden ID {id_orden}"
+            )
+            messagebox.showinfo("Éxito", "Orden eliminada", parent=self.marco)
+            self.cargar_datos()
+            self.arbol.update_idletasks()
+            self.arbol.update()

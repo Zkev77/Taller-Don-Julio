@@ -4,57 +4,57 @@ from database import Database
 from colores_app import *
 
 class GestionClientes:
-    def __init__(self, parent, rol, usuario_actual):
-        self.parent = parent
+    def __init__(self, padre, rol, usuario_actual):
+        self.padre = padre
         self.rol = rol
         self.usuario_actual = usuario_actual
-        self.db = Database()
-        self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
+        self.bd = Database()
+        self.usuario_id = self.bd.obtener_id_usuario(usuario_actual) or 0
 
-        self.frame = ctk.CTkFrame(parent, fg_color=FONDO_TARJETA)
-        self.frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.marco = ctk.CTkFrame(padre, fg_color=FONDO_TARJETA)
+        self.marco.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.toolbar = ctk.CTkFrame(self.frame, fg_color=FONDO_TARJETA)
-        self.toolbar.pack(fill="x", pady=5)
+        self.barra_herramientas = ctk.CTkFrame(self.marco, fg_color=FONDO_TARJETA)
+        self.barra_herramientas.pack(fill="x", pady=5)
 
-        self.btn_agregar = ctk.CTkButton(
-            self.toolbar, text="+ Agregar Cliente",
+        self.boton_agregar = ctk.CTkButton(
+            self.barra_herramientas, text="+ Agregar Cliente",
             fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
             command=self.abrir_formulario_agregar
         )
         if self.rol not in ['admin', 'secretaria']:
-            self.btn_agregar.configure(state="disabled")
-        self.btn_agregar.pack(side="left", padx=5)
+            self.boton_agregar.configure(state="disabled")
+        self.boton_agregar.pack(side="left", padx=5)
 
-        self.btn_editar = ctk.CTkButton(
-            self.toolbar, text="✏ Editar",
+        self.boton_editar = ctk.CTkButton(
+            self.barra_herramientas, text="✏ Editar",
             fg_color=COLOR_AZUL, text_color=TEXTO_BLANCO,
             command=self.abrir_formulario_editar
         )
-        self.btn_editar.pack(side="left", padx=5)
+        self.boton_editar.pack(side="left", padx=5)
 
-        self.btn_eliminar = ctk.CTkButton(
-            self.toolbar, text="🗑 Eliminar",
+        self.boton_eliminar = ctk.CTkButton(
+            self.barra_herramientas, text="🗑 Eliminar",
             fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
             command=self.eliminar_cliente
         )
-        self.btn_eliminar.pack(side="left", padx=5)
+        self.boton_eliminar.pack(side="left", padx=5)
 
-        self.btn_refrescar = ctk.CTkButton(
-            self.toolbar, text="⟳ Refrescar",
+        self.boton_refrescar = ctk.CTkButton(
+            self.barra_herramientas, text="⟳ Refrescar",
             fg_color=FONDO_SIDEBAR, text_color=TEXTO_BLANCO,
             command=self.cargar_datos
         )
-        self.btn_refrescar.pack(side="left", padx=5)
+        self.boton_refrescar.pack(side="left", padx=5)
 
         if self.rol == 'auditor':
-            self.btn_agregar.configure(state="disabled")
-            self.btn_editar.configure(state="disabled")
-            self.btn_eliminar.configure(state="disabled")
+            self.boton_agregar.configure(state="disabled")
+            self.boton_editar.configure(state="disabled")
+            self.boton_eliminar.configure(state="disabled")
         elif self.rol == 'mecanico':
-            self.toolbar.pack_forget()
+            self.barra_herramientas.pack_forget()
             ctk.CTkLabel(
-                self.frame,
+                self.marco,
                 text="⛔ Acceso denegado para mecánicos",
                 font=("Inter", 12),
                 text_color=TEXTO_GRIS
@@ -68,50 +68,50 @@ class GestionClientes:
         style.configure("Treeview", background=FONDO_TARJETA, foreground=TEXTO_BLANCO, fieldbackground=FONDO_TARJETA)
         style.map("Treeview", background=[('selected', COLOR_ACENTO)])
 
-        self.tree = ttk.Treeview(
-            self.frame,
+        self.arbol = ttk.Treeview(
+            self.marco,
             columns=("ID", "Cédula", "Nombre", "Teléfono", "Email"),
             show="headings"
         )
-        self.tree.heading("ID", text="ID")
-        self.tree.heading("Cédula", text="Cédula / RIF")
-        self.tree.heading("Nombre", text="Nombre")
-        self.tree.heading("Teléfono", text="Teléfono")
-        self.tree.heading("Email", text="Email")
-        self.tree.column("ID", width=50)
-        self.tree.column("Cédula", width=120)
-        self.tree.column("Nombre", width=200)
-        self.tree.column("Teléfono", width=120)
-        self.tree.column("Email", width=150)
+        self.arbol.heading("ID", text="ID")
+        self.arbol.heading("Cédula", text="Cédula / RIF")
+        self.arbol.heading("Nombre", text="Nombre")
+        self.arbol.heading("Teléfono", text="Teléfono")
+        self.arbol.heading("Email", text="Email")
+        self.arbol.column("ID", width=50)
+        self.arbol.column("Cédula", width=120)
+        self.arbol.column("Nombre", width=200)
+        self.arbol.column("Teléfono", width=120)
+        self.arbol.column("Email", width=150)
 
-        scrollbar = ttk.Scrollbar(self.frame, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-        self.tree.pack(side="left", fill="both", expand=True)
+        scrollbar = ttk.Scrollbar(self.marco, orient="vertical", command=self.arbol.yview)
+        self.arbol.configure(yscrollcommand=scrollbar.set)
+        self.arbol.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
         self.cargar_datos()
 
     def cargar_datos(self):
-        for row in self.tree.get_children():
-            self.tree.delete(row)
-        clientes = self.db.listar_clientes()
+        for row in self.arbol.get_children():
+            self.arbol.delete(row)
+        clientes = self.bd.listar_clientes()
         for c in clientes:
-            self.tree.insert("", "end", values=(
+            self.arbol.insert("", "end", values=(
                 c['id'],
                 c['cedula'],
                 c['nombre'],
                 c['telefono'],
                 c['email']
             ))
-        self.tree.update_idletasks()
+        self.arbol.update_idletasks()
 
     def obtener_seleccionado(self):
-        seleccion = self.tree.selection()
+        seleccion = self.arbol.selection()
         if not seleccion:
             messagebox.showwarning("Seleccionar", "Primero seleccione un cliente de la lista")
             return None
-        item = self.tree.item(seleccion)
-        return item['values'][0]
+        elemento = self.arbol.item(seleccion)
+        return elemento['values'][0]
 
     def abrir_formulario_agregar(self):
         self._formulario_cliente()
@@ -119,96 +119,96 @@ class GestionClientes:
     def abrir_formulario_editar(self):
         id_cliente = self.obtener_seleccionado()
         if id_cliente:
-            datos = self.db.obtener_cliente_por_id(id_cliente)
+            datos = self.bd.obtener_cliente_por_id(id_cliente)
             if datos:
                 self._formulario_cliente(id_cliente, datos)
 
     def _formulario_cliente(self, id_cliente=None, datos=None):
-        ventana = ctk.CTkToplevel(self.parent)
+        ventana = ctk.CTkToplevel(self.padre)
         ventana.title("Nuevo Cliente" if id_cliente is None else "Editar Cliente")
         ventana.geometry("500x400")
         ventana.resizable(False, False)
 
-        frame = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
+        marco = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        marco.pack(fill="both", expand=True, padx=20, pady=20)
 
-        def solo_digitos_y_longitud(caracter, texto_actual, max_len):
+        def solo_digitos_y_longitud(caracter, texto_actual, longitud_maxima):
             if caracter == '':
                 return True
-            if caracter.isdigit() and len(texto_actual) <= max_len:
+            if caracter.isdigit() and len(texto_actual) <= longitud_maxima:
                 return True
             return False
 
-        def solo_letras_espacios_y_longitud(caracter, texto_actual, max_len):
+        def solo_letras_espacios_y_longitud(caracter, texto_actual, longitud_maxima):
             if caracter == '':
                 return True
-            if (caracter.isalpha() or caracter.isspace()) and len(texto_actual) <= max_len:
+            if (caracter.isalpha() or caracter.isspace()) and len(texto_actual) <= longitud_maxima:
                 return True
             return False
 
-        vcmd_cedula_num = ventana.register(lambda c, t: solo_digitos_y_longitud(c, t, 8))
-        vcmd_nombre = ventana.register(lambda c, t: solo_letras_espacios_y_longitud(c, t, 50))
-        vcmd_telefono_num = ventana.register(lambda c, t: solo_digitos_y_longitud(c, t, 7))
+        validar_cedula_num = ventana.register(lambda c, t: solo_digitos_y_longitud(c, t, 8))
+        validar_nombre = ventana.register(lambda c, t: solo_letras_espacios_y_longitud(c, t, 50))
+        validar_telefono_num = ventana.register(lambda c, t: solo_digitos_y_longitud(c, t, 7))
 
-        ctk.CTkLabel(frame, text="Tipo Cédula:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
+        ctk.CTkLabel(marco, text="Tipo Cédula:", text_color=TEXTO_BLANCO).grid(row=0, column=0, padx=10, pady=10, sticky="e")
         tipos = ['V', 'E']
-        combo_tipo = ctk.CTkComboBox(frame, values=tipos, width=80, state="readonly")
-        combo_tipo.grid(row=0, column=1, padx=10, pady=10, sticky="w")
-        combo_tipo.set('V')
+        lista_tipo = ctk.CTkComboBox(marco, values=tipos, width=80, state="readonly")
+        lista_tipo.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+        lista_tipo.set('V')
 
-        ctk.CTkLabel(frame, text="Número Cédula:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="e")
-        entry_cedula_num = ctk.CTkEntry(frame, width=250, validate="key", validatecommand=(vcmd_cedula_num, '%S', '%P'))
-        entry_cedula_num.grid(row=1, column=1, padx=10, pady=10, sticky="w")
+        ctk.CTkLabel(marco, text="Número Cédula:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        campo_cedula_num = ctk.CTkEntry(marco, width=250, validate="key", validatecommand=(validar_cedula_num, '%S', '%P'))
+        campo_cedula_num.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-        ctk.CTkLabel(frame, text="Nombre completo:", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
-        entry_nombre = ctk.CTkEntry(frame, width=250, validate="key", validatecommand=(vcmd_nombre, '%S', '%P'))
-        entry_nombre.grid(row=2, column=1, padx=10, pady=10, sticky="w")
+        ctk.CTkLabel(marco, text="Nombre completo:", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        campo_nombre = ctk.CTkEntry(marco, width=250, validate="key", validatecommand=(validar_nombre, '%S', '%P'))
+        campo_nombre.grid(row=2, column=1, padx=10, pady=10, sticky="w")
 
-        ctk.CTkLabel(frame, text="Teléfono:", text_color=TEXTO_BLANCO).grid(row=3, column=0, padx=10, pady=10, sticky="e")
-        frame_telefono = ctk.CTkFrame(frame, fg_color="transparent")
-        frame_telefono.grid(row=3, column=1, padx=10, pady=10, sticky="w")
+        ctk.CTkLabel(marco, text="Teléfono:", text_color=TEXTO_BLANCO).grid(row=3, column=0, padx=10, pady=10, sticky="e")
+        marco_telefono = ctk.CTkFrame(marco, fg_color="transparent")
+        marco_telefono.grid(row=3, column=1, padx=10, pady=10, sticky="w")
 
         prefijos = ['0412', '0414', '0416', '0424', '0426']
-        combo_prefijo = ctk.CTkComboBox(frame_telefono, values=prefijos, width=80, state="readonly")
-        combo_prefijo.pack(side="left", padx=(0, 5))
-        combo_prefijo.set('0412')
+        lista_prefijo = ctk.CTkComboBox(marco_telefono, values=prefijos, width=80, state="readonly")
+        lista_prefijo.pack(side="left", padx=(0, 5))
+        lista_prefijo.set('0412')
 
-        entry_telefono_num = ctk.CTkEntry(frame_telefono, width=150, validate="key", validatecommand=(vcmd_telefono_num, '%S', '%P'))
-        entry_telefono_num.pack(side="left")
+        campo_telefono_num = ctk.CTkEntry(marco_telefono, width=150, validate="key", validatecommand=(validar_telefono_num, '%S', '%P'))
+        campo_telefono_num.pack(side="left")
 
-        ctk.CTkLabel(frame, text="Email:", text_color=TEXTO_BLANCO).grid(row=4, column=0, padx=10, pady=10, sticky="e")
-        entry_email = ctk.CTkEntry(frame, width=250)
-        entry_email.grid(row=4, column=1, padx=10, pady=10, sticky="w")
+        ctk.CTkLabel(marco, text="Email:", text_color=TEXTO_BLANCO).grid(row=4, column=0, padx=10, pady=10, sticky="e")
+        campo_email = ctk.CTkEntry(marco, width=250)
+        campo_email.grid(row=4, column=1, padx=10, pady=10, sticky="w")
 
         if datos:
             cedula = datos['cedula']
             if '-' in cedula:
                 tipo, numero = cedula.split('-', 1)
-                combo_tipo.set(tipo)
-                entry_cedula_num.insert(0, numero)
+                lista_tipo.set(tipo)
+                campo_cedula_num.insert(0, numero)
             else:
-                combo_tipo.set('V')
-                entry_cedula_num.insert(0, cedula)
+                lista_tipo.set('V')
+                campo_cedula_num.insert(0, cedula)
 
-            entry_nombre.insert(0, datos['nombre'])
+            campo_nombre.insert(0, datos['nombre'])
 
             telefono = datos['telefono'] or ''
             if len(telefono) >= 4:
                 prefijo_actual = telefono[:4]
                 if prefijo_actual in prefijos:
-                    combo_prefijo.set(prefijo_actual)
-                    entry_telefono_num.insert(0, telefono[4:])
+                    lista_prefijo.set(prefijo_actual)
+                    campo_telefono_num.insert(0, telefono[4:])
                 else:
-                    entry_telefono_num.insert(0, telefono)
-            entry_email.insert(0, datos['email'] or '')
+                    campo_telefono_num.insert(0, telefono)
+            campo_email.insert(0, datos['email'] or '')
 
         def guardar():
-            tipo = combo_tipo.get()
-            cedula_num = entry_cedula_num.get().strip()
-            nombre = entry_nombre.get().strip()
-            prefijo = combo_prefijo.get()
-            telefono_num = entry_telefono_num.get().strip()
-            email = entry_email.get().strip()
+            tipo = lista_tipo.get()
+            cedula_num = campo_cedula_num.get().strip()
+            nombre = campo_nombre.get().strip()
+            prefijo = lista_prefijo.get()
+            telefono_num = campo_telefono_num.get().strip()
+            email = campo_email.get().strip()
 
             if not tipo:
                 messagebox.showerror("Error", "Seleccione un tipo de cédula", parent=ventana)
@@ -232,21 +232,21 @@ class GestionClientes:
             cedula_completa = f"{tipo}-{cedula_num}"
             telefono_completo = prefijo + telefono_num
 
-            telefono_existe = self.db.existe_telefono(telefono_completo, id_cliente)
+            telefono_existe = self.bd.existe_telefono(telefono_completo, id_cliente)
             if telefono_existe:
                 messagebox.showerror("Error", "El número de teléfono ya está registrado por otro cliente", parent=ventana)
                 return
 
             if id_cliente is None:
-                exito, mensaje, nuevo_id = self.db.agregar_cliente(cedula_completa, nombre, telefono_completo, email)
+                exito, mensaje, nuevo_id = self.bd.agregar_cliente(cedula_completa, nombre, telefono_completo, email)
             else:
-                exito, mensaje = self.db.actualizar_cliente(id_cliente, cedula_completa, nombre, telefono_completo, email)
+                exito, mensaje = self.bd.actualizar_cliente(id_cliente, cedula_completa, nombre, telefono_completo, email)
 
             if exito:
                 accion = "INSERT" if id_cliente is None else "UPDATE"
                 desc = f"{accion} en clientes: {cedula_completa} - {nombre}"
                 registro_id = nuevo_id if id_cliente is None else id_cliente
-                self.db.registrar_log(
+                self.bd.registrar_log(
                     usuario_id=self.usuario_id,
                     usuario_nombre=self.usuario_actual,
                     tabla="clientes",
@@ -260,21 +260,21 @@ class GestionClientes:
             else:
                 messagebox.showerror("Error", mensaje, parent=ventana)
 
-        btn_guardar = ctk.CTkButton(frame, text="Guardar", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=guardar)
-        btn_guardar.grid(row=5, column=0, columnspan=2, pady=20)
+        boton_guardar = ctk.CTkButton(marco, text="Guardar", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=guardar)
+        boton_guardar.grid(row=5, column=0, columnspan=2, pady=20)
 
     def eliminar_cliente(self):
         id_cliente = self.obtener_seleccionado()
         if not id_cliente:
             return
 
-        datos_cliente = self.db.obtener_cliente_por_id(id_cliente)
+        datos_cliente = self.bd.obtener_cliente_por_id(id_cliente)
         nombre_cliente = datos_cliente['nombre'] if datos_cliente else "desconocido"
 
         if messagebox.askyesno("Confirmar", "¿Eliminar este cliente? Se eliminarán también sus vehículos."):
-            exito, mensaje = self.db.eliminar_cliente(id_cliente)
+            exito, mensaje = self.bd.eliminar_cliente(id_cliente)
             if exito:
-                self.db.registrar_log(
+                self.bd.registrar_log(
                     usuario_id=self.usuario_id,
                     usuario_nombre=self.usuario_actual,
                     tabla="clientes",
@@ -282,12 +282,12 @@ class GestionClientes:
                     accion="DELETE",
                     descripcion=f"Eliminado cliente ID {id_cliente} - {nombre_cliente}"
                 )
-                messagebox.showinfo("Éxito", "Cliente eliminado", parent=self.frame)
+                messagebox.showinfo("Éxito", "Cliente eliminado", parent=self.marco)
                 try:
                     self.cargar_datos()
-                    self.tree.update()
-                    self.tree.selection_remove(self.tree.selection())
+                    self.arbol.update()
+                    self.arbol.selection_remove(self.arbol.selection())
                 except Exception as e:
-                    messagebox.showerror("Error", f"No se pudo actualizar la lista: {e}", parent=self.frame)
+                    messagebox.showerror("Error", f"No se pudo actualizar la lista: {e}", parent=self.marco)
             else:
-                messagebox.showerror("Error", mensaje, parent=self.frame)
+                messagebox.showerror("Error", mensaje, parent=self.marco)

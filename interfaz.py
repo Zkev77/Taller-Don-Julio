@@ -15,54 +15,54 @@ from PIL import Image
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class MenuTaller:
-    def __init__(self, root, rol, usuario_actual):
-        self.root = root
-        self.root.withdraw()
+    def __init__(self, raiz, rol, usuario_actual):
+        self.raiz = raiz
+        self.raiz.withdraw()
 
         self.rol = rol
         self.usuario_actual = usuario_actual
-        self.root.title("Taller Don Julio - Sistema de Gestión Operativa")
+        self.raiz.title("Taller Don Julio - Sistema de Gestión Operativa")
 
-        self.root.minsize(1024, 600)
-        self.root.configure(bg=FONDO_PRINCIPAL)
+        self.raiz.minsize(1024, 600)
+        self.raiz.configure(bg=FONDO_PRINCIPAL)
 
         self.modulo_actual = None
-        self.frames_modulos = {}
+        self.marcos_modulos = {}
 
-        self.sidebar = ctk.CTkFrame(self.root, fg_color=FONDO_SIDEBAR, width=220, corner_radius=0)
-        self.sidebar.pack(side="left", fill="y")
+        self.panel_lateral = ctk.CTkFrame(self.raiz, fg_color=FONDO_SIDEBAR, width=220, corner_radius=0)
+        self.panel_lateral.pack(side="left", fill="y")
 
-        img_auto = Image.open(os.path.join(BASE_DIR, "carro.png"))  
-        img_auto_ctk = ctk.CTkImage(light_image=img_auto, dark_image=img_auto, size=(50, 50)) 
+        imagen_auto = Image.open(os.path.join(BASE_DIR, "carro.png"))  
+        imagen_auto_ctk = ctk.CTkImage(light_image=imagen_auto, dark_image=imagen_auto, size=(50, 50)) 
 
-        self.lbl_titulo = ctk.CTkLabel(
-            self.sidebar,
+        self.etiqueta_titulo = ctk.CTkLabel(
+            self.panel_lateral,
             text="TALLER\nDON JULIO",
             font=("Inter", 18, "bold"),
             text_color=COLOR_ACENTO,
-            image=img_auto_ctk,
+            image=imagen_auto_ctk,
             compound="left"
         )
-        self.lbl_titulo.pack(pady=(30, 10))
+        self.etiqueta_titulo.pack(pady=(30, 10))
 
-        ctk.CTkFrame(self.sidebar, height=2, fg_color=SEPARADOR).pack(fill="x", padx=20, pady=10)
+        ctk.CTkFrame(self.panel_lateral, height=2, fg_color=SEPARADOR).pack(fill="x", padx=20, pady=10)
 
-        self.lbl_usuario = ctk.CTkLabel(
-            self.sidebar,
+        self.etiqueta_usuario = ctk.CTkLabel(
+            self.panel_lateral,
             text=f" 👤 {self.usuario_actual}\n({self.rol.upper()})",
             font=("Inter", 12),
             text_color=TEXTO_GRIS,
             justify="left"
         )
-        self.lbl_usuario.pack(pady=(10, 20))
+        self.etiqueta_usuario.pack(pady=(10, 20))
 
-        ctk.CTkFrame(self.sidebar, height=2, fg_color=SEPARADOR).pack(fill="x", padx=20, pady=10)
+        ctk.CTkFrame(self.panel_lateral, height=2, fg_color=SEPARADOR).pack(fill="x", padx=20, pady=10)
 
         self._crear_botones()
 
-        ctk.CTkFrame(self.sidebar, height=2, fg_color=SEPARADOR).pack(fill="x", padx=20, pady=10)
-        btn_cerrar = ctk.CTkButton(
-            self.sidebar,
+        ctk.CTkFrame(self.panel_lateral, height=2, fg_color=SEPARADOR).pack(fill="x", padx=20, pady=10)
+        boton_cerrar = ctk.CTkButton(
+            self.panel_lateral,
             text=" ↩ Cerrar Sesión",
             font=("Inter", 13),
             fg_color="transparent",
@@ -71,9 +71,9 @@ class MenuTaller:
             anchor="w",
             command=self.cerrar_sesion
         )
-        btn_cerrar.pack(fill="x", padx=10, pady=10)
+        boton_cerrar.pack(fill="x", padx=10, pady=10)
 
-        self.area_principal = ctk.CTkFrame(self.root, fg_color=FONDO_PRINCIPAL, corner_radius=0)
+        self.area_principal = ctk.CTkFrame(self.raiz, fg_color=FONDO_PRINCIPAL, corner_radius=0)
         self.area_principal.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
         self.contenedor_modulos = ctk.CTkFrame(self.area_principal, fg_color=FONDO_PRINCIPAL)
@@ -84,18 +84,18 @@ class MenuTaller:
 
         self._crear_modulos()
         self.mostrar_inicio()
-        self.root.deiconify()
-        self.root.after(80, self._maximizar_ventana)
+        self.raiz.deiconify()
+        self.raiz.after(80, self._maximizar_ventana)
 
     def _maximizar_ventana(self):
         if sys.platform == "linux":
             try:
-                self.root.attributes('-zoomed', True)
+                self.raiz.attributes('-zoomed', True)
                 return
             except Exception:
                 pass
         try:
-            self.root.state('zoomed')
+            self.raiz.state('zoomed')
         except Exception:
             pass
 
@@ -137,8 +137,8 @@ class MenuTaller:
 
         for texto in permitidos:
             emoji = emojis.get(texto, "")
-            btn = ctk.CTkButton(
-                self.sidebar,
+            boton = ctk.CTkButton(
+                self.panel_lateral,
                 text=f" {emoji} {texto}",
                 font=("Inter", 13),
                 fg_color="transparent",
@@ -147,7 +147,7 @@ class MenuTaller:
                 anchor="w",
                 command=opciones[texto]
             )
-            btn.pack(fill="x", padx=10, pady=5)
+            boton.pack(fill="x", padx=10, pady=5)
 
     def _crear_modulos(self):
         self.modulos_clases = {
@@ -160,19 +160,19 @@ class MenuTaller:
             "presupuestos": GestionPresupuestos
         }
 
-        frame_inicio = ctk.CTkFrame(self.contenedor_modulos, fg_color=FONDO_PRINCIPAL)
-        frame_inicio.place(x=0, y=0, relwidth=1, relheight=1)
-        self.frames_modulos["inicio"] = frame_inicio
+        marco_inicio = ctk.CTkFrame(self.contenedor_modulos, fg_color=FONDO_PRINCIPAL)
+        marco_inicio.place(x=0, y=0, relwidth=1, relheight=1)
+        self.marcos_modulos["inicio"] = marco_inicio
 
         ctk.CTkLabel(
-            frame_inicio,
+            marco_inicio,
             text=f"Panel de Control - Rol: {self.rol.upper()}",
             font=("Inter", 24, "bold"),
             text_color=TEXTO_BLANCO
         ).pack(pady=30)
 
         ctk.CTkLabel(
-            frame_inicio,
+            marco_inicio,
             text="Bienvenido al sistema de gestión del Taller Don Julio\n\n"
                  "Utilice el menú lateral para acceder a las funciones.",
             font=("Inter", 14),
@@ -180,45 +180,69 @@ class MenuTaller:
             justify="center"
         ).pack(pady=10)
 
-        self.frame_stats = ctk.CTkFrame(frame_inicio, fg_color=FONDO_TARJETA, corner_radius=10)
-        self.frame_stats.pack(pady=20, padx=20, fill="x")
+        self.marco_estadisticas = ctk.CTkFrame(marco_inicio, fg_color=FONDO_TARJETA, corner_radius=10)
+        self.marco_estadisticas.pack(pady=20, padx=20, fill="x")
 
-        self.lbl_stats = ctk.CTkLabel(
-            self.frame_stats,
+        self.etiqueta_estadisticas = ctk.CTkLabel(
+            self.marco_estadisticas,
             text=" 📊 Cargando datos...",
             font=("Inter", 16, "bold"),
             text_color=COLOR_ACENTO
         )
-        self.lbl_stats.pack(pady=15)
+        self.etiqueta_estadisticas.pack(pady=15)
+
+        self.marco_tarjetas = ctk.CTkFrame(self.marco_estadisticas, fg_color="transparent")
+        self.marco_tarjetas.pack(fill="x", padx=20, pady=(0, 20))
+
+        self.etiqueta_recaudado_mes = self._crear_tarjeta(
+            self.marco_tarjetas, "💵 Recaudado este mes", "$0.00 USD", COLOR_AZUL)
+        self.etiqueta_recaudado_total = self._crear_tarjeta(
+            self.marco_tarjetas, "🏆 Recaudado histórico", "$0.00 USD", COLOR_VERDE)
+
+    def _crear_tarjeta(self, contenedor, titulo, valor, color):
+        """Crea una tarjeta con un titulo y una cifra grande, y devuelve la etiqueta del valor."""
+        tarjeta = ctk.CTkFrame(contenedor, fg_color=FONDO_SIDEBAR, corner_radius=10)
+        tarjeta.pack(side="left", fill="both", expand=True, padx=10, pady=5)
+
+        ctk.CTkLabel(tarjeta, text=titulo, font=("Inter", 12), text_color=TEXTO_GRIS).pack(pady=(12, 2))
+        etiqueta_valor = ctk.CTkLabel(tarjeta, text=valor, font=("Inter", 22, "bold"), text_color=color)
+        etiqueta_valor.pack(pady=(0, 12))
+        return etiqueta_valor
 
     def _obtener_frame_modulo(self, nombre):
         """Crea el módulo la primera vez que se abre (carga diferida)."""
-        if nombre not in self.frames_modulos:
-            frame = ctk.CTkFrame(self.contenedor_modulos, fg_color=FONDO_PRINCIPAL)
+        if nombre not in self.marcos_modulos:
+            marco = ctk.CTkFrame(self.contenedor_modulos, fg_color=FONDO_PRINCIPAL)
             clase = self.modulos_clases.get(nombre)
             if clase:
-                clase(frame, self.rol, self.usuario_actual)
-            frame.place(x=0, y=0, relwidth=1, relheight=1)
-            self.frames_modulos[nombre] = frame
-        return self.frames_modulos[nombre]
+                clase(marco, self.rol, self.usuario_actual)
+            marco.place(x=0, y=0, relwidth=1, relheight=1)
+            self.marcos_modulos[nombre] = marco
+        return self.marcos_modulos[nombre]
 
-    def _mostrar_modulo(self, nombre_frame):
-        if self.modulo_actual == nombre_frame:
+    def _mostrar_modulo(self, nombre_marco):
+        if self.modulo_actual == nombre_marco:
             return
 
-        self._obtener_frame_modulo(nombre_frame).tkraise()
-        self.modulo_actual = nombre_frame
+        self._obtener_frame_modulo(nombre_marco).tkraise()
+        self.modulo_actual = nombre_marco
 
     def mostrar_inicio(self):
         try:
-            db = Database()
-            clientes = db.listar_clientes()
-            vehiculos = db.listar_vehiculos()
+            bd = Database()
+            clientes = bd.listar_clientes()
+            vehiculos = bd.listar_vehiculos()
             num_clientes = len(clientes) if clientes else 0
             num_vehiculos = len(vehiculos) if vehiculos else 0
-            self.lbl_stats.configure(text=f" Clientes: {num_clientes}   |   Vehículos: {num_vehiculos}")
+            self.etiqueta_estadisticas.configure(text=f" Clientes: {num_clientes}   |   Vehículos: {num_vehiculos}")
+
+            totales = bd.obtener_totales_recaudados() or {}
+            self.etiqueta_recaudado_mes.configure(
+                text=f"${float(totales.get('mes') or 0):,.2f} USD")
+            self.etiqueta_recaudado_total.configure(
+                text=f"${float(totales.get('total') or 0):,.2f} USD")
         except Exception:
-            self.lbl_stats.configure(text=" Sistema listo para operar")
+            self.etiqueta_estadisticas.configure(text=" Sistema listo para operar")
 
         self._mostrar_modulo("inicio")
 
@@ -244,6 +268,6 @@ class MenuTaller:
         self._mostrar_modulo("configuracion")
 
     def cerrar_sesion(self):
-        self.root.destroy()
+        self.raiz.destroy()
         import login
         login.main()

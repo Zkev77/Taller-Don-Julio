@@ -9,11 +9,11 @@ def formatear_fecha(valor, formato="%d/%m/%Y %H:%M"):
     return valor.strftime(formato)
 
 
-def solo_numeros_y_punto(caracter, texto_actual, max_len=12):
+def solo_numeros_y_punto(caracter, texto_actual, longitud_maxima=12):
     if caracter == '':
         return True
-    return (caracter.isdigit() or caracter == '.') and len(texto_actual) <= max_len
+    return (caracter.isdigit() or caracter == '.') and len(texto_actual) <= longitud_maxima
 
 
-def registrar_validador(ventana, max_len=12):
-    return ventana.register(lambda c, t: solo_numeros_y_punto(c, t, max_len))
+def registrar_validador(ventana, longitud_maxima=12):
+    return ventana.register(lambda c, t: solo_numeros_y_punto(c, t, longitud_maxima))
