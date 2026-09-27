@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from tkinter import ttk, messagebox
 from database import Database
-from utilidades import formatear_fecha
+from utilidades import BAJO_STOCK, formatear_fecha
 from colores_app import *
 
 class GestionReportes:
@@ -142,7 +142,7 @@ class GestionReportes:
 
         ctk.CTkLabel(
             frame_stats,
-            text=f"⚠️ Repuestos con bajo stock (< 5): {stats['repuestos_bajo_stock']}",
+            text=f"⚠️ Repuestos con bajo stock (< {BAJO_STOCK}): {stats['repuestos_bajo_stock']}",
             font=("Inter", 12),
             text_color=COLOR_ACENTO
         ).pack(anchor="w", pady=5)

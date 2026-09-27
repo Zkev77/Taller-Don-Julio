@@ -3,6 +3,7 @@ import hashlib
 import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
+from utilidades import BAJO_STOCK
 
 class Database:
     _instance = None
@@ -141,8 +142,7 @@ class Database:
 
     def listar_clientes_combobox(self):
         return self.fetch_all("SELECT id, nombre FROM clientes ORDER BY nombre")
-
-    # CORREGIDO: Única definición de agregar_vehiculo, retorna 3 valores
+    
     def agregar_vehiculo(self, placa, marca, modelo, cliente_id):
         if self.fetch_all("SELECT id FROM vehiculos WHERE placa = %s", (placa,)):
             return False, "La placa ya existe", None
@@ -190,9 +190,9 @@ class Database:
         """
         return self.fetch_all(query)
 
-    def crear_orden(self, vehiculo_id, descripcion, estado="Pendiente"):
-        query = "INSERT INTO ordenes (vehiculo_id, descripcion, estado, fecha) VALUES (%s, %s, %s, NOW())"
-        exito, mensaje, lastrowid = self.execute_query(query, (vehiculo_id, descripcion, estado))
+    def crear_orden(self, vehiculo_id, descripcion, estado="Ingresado", total=0):
+        query = "INSERT INTO ordenes (vehiculo_id, descripcion, estado, fecha, total_orden_usd) VALUES (%s, %s, %s, NOW(), %s)"
+        exito, mensaje, lastrowid = self.execute_query(query, (vehiculo_id, descripcion, estado, total))
         return exito, mensaje, lastrowid
 
     def obtener_orden_completa(self, id_orden):
@@ -359,8 +359,8 @@ class Database:
         repuestos_bajo_stock = self.fetch_all("""
             SELECT COUNT(*) as total 
             FROM repuestos 
-            WHERE stock < 5
-        """)
+            WHERE stock < %s
+        """, (BAJO_STOCK,))
         stats['repuestos_bajo_stock'] = repuestos_bajo_stock[0]['total'] if repuestos_bajo_stock else 0
         return stats
 

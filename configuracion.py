@@ -14,6 +14,7 @@ class GestionConfiguracion:
         self.rol = rol
         self.usuario_actual = usuario_actual
         self.db = Database()
+        self.usuario_id = self.db.obtener_id_usuario(usuario_actual) or 0
         self.frame = ctk.CTkFrame(parent, fg_color=FONDO_TARJETA)
         self.frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -111,7 +112,7 @@ class GestionConfiguracion:
         entry_password.grid(row=1, column=1, padx=10, pady=10)
 
         ctk.CTkLabel(frame, text="Rol:", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
-        combo_rol = ctk.CTkComboBox(frame, values=['admin', 'mecanico', 'auditor', 'secretaria'], width=248)
+        combo_rol = ctk.CTkComboBox(frame, values=['admin', 'mecanico', 'auditor', 'secretaria'], width=248, state="readonly")
         combo_rol.grid(row=2, column=1, padx=10, pady=10)
         combo_rol.set('mecanico')
 
@@ -136,10 +137,19 @@ class GestionConfiguracion:
                     messagebox.showerror("Error", "La contraseña es obligatoria", parent=ventana)
                     return
                 password_hash = hashlib.sha256(password.encode()).hexdigest()
-                exito, mensaje, _ = self.db.execute_query(
+                exito, mensaje, nuevo_id = self.db.execute_query(
                     "INSERT INTO usuarios (username, password, rol) VALUES (%s, %s, %s)",
                     (username, password_hash, rol)
                 )
+                if exito:
+                    self.db.registrar_log(
+                        usuario_id=self.usuario_id,
+                        usuario_nombre=self.usuario_actual,
+                        tabla="usuarios",
+                        registro_id=nuevo_id,
+                        accion="INSERT",
+                        descripcion=f"Usuario '{username}' creado con rol '{rol}'"
+                    )
             else:
                 if password:
                     password_hash = hashlib.sha256(password.encode()).hexdigest()
@@ -151,6 +161,15 @@ class GestionConfiguracion:
                     exito, mensaje, _ = self.db.execute_query(
                         "UPDATE usuarios SET username=%s, rol=%s WHERE id=%s",
                         (username, rol, id_usuario)
+                    )
+                if exito:
+                    self.db.registrar_log(
+                        usuario_id=self.usuario_id,
+                        usuario_nombre=self.usuario_actual,
+                        tabla="usuarios",
+                        registro_id=id_usuario,
+                        accion="UPDATE",
+                        descripcion=f"Usuario '{username}' actualizado (rol '{rol}')"
                     )
 
             if exito:
@@ -193,6 +212,14 @@ class GestionConfiguracion:
         if messagebox.askyesno("Confirmar", f"¿Eliminar al usuario '{usuario_seleccionado['username']}' permanentemente?"):
             exito, mensaje, _ = self.db.execute_query("DELETE FROM usuarios WHERE id=%s", (id_usuario,))
             if exito:
+                self.db.registrar_log(
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
+                    tabla="usuarios",
+                    registro_id=id_usuario,
+                    accion="DELETE",
+                    descripcion=f"Usuario '{usuario_seleccionado['username']}' eliminado"
+                )
                 messagebox.showinfo("Éxito", "Usuario eliminado")
                 self._cargar_usuarios()
             else:

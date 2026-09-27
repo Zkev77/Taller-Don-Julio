@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from tkinter import ttk, messagebox
 from database import Database
-from utilidades import formatear_fecha
+from utilidades import formatear_fecha, registrar_validador
 from colores_app import *
 
 class GestionServicios:
@@ -154,14 +154,7 @@ class GestionServicios:
         txt_descripcion = ctk.CTkTextbox(frame, width=350, height=120)
         txt_descripcion.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-        def solo_numeros_y_punto(caracter, texto_actual, max_len):
-            if caracter == '':
-                return True
-            if (caracter.isdigit() or caracter == '.') and len(texto_actual) <= max_len:
-                return True
-            return False
-
-        vcmd_total = ventana.register(lambda c, t: solo_numeros_y_punto(c, t, 10))
+        vcmd_total = registrar_validador(ventana, 10)
 
         ctk.CTkLabel(frame, text="Total Orden (USD):", text_color=TEXTO_BLANCO).grid(row=2, column=0, padx=10, pady=10, sticky="e")
         entry_total = ctk.CTkEntry(frame, width=150, validate="key", validatecommand=(vcmd_total, '%S', '%P'))
@@ -194,9 +187,8 @@ class GestionServicios:
                 return
 
             try:
-                exito, mensaje, nuevo_id = self.db.crear_orden(vehiculo_id, descripcion, "Ingresado")
+                exito, mensaje, nuevo_id = self.db.crear_orden(vehiculo_id, descripcion, "Ingresado", total_orden)
                 if exito:
-                    self.db.execute_query("UPDATE ordenes SET total_orden_usd = %s WHERE id = %s", (total_orden, nuevo_id))
                     self.db.registrar_log(
                         usuario_id=self.usuario_id,
                         usuario_nombre=self.usuario_actual,
@@ -268,13 +260,16 @@ class GestionServicios:
         combo_moneda.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         combo_moneda.set("USD")
 
+        vcmd_tasa = registrar_validador(ventana, 12)
+        vcmd_monto = registrar_validador(ventana, 12)
+
         ctk.CTkLabel(form_frame, text="Tasa (1 USD =):", text_color=TEXTO_BLANCO).grid(row=0, column=2, padx=5, pady=5, sticky="e")
-        entry_tasa = ctk.CTkEntry(form_frame, width=120)
+        entry_tasa = ctk.CTkEntry(form_frame, width=120, validate="key", validatecommand=(vcmd_tasa, '%S', '%P'))
         entry_tasa.grid(row=0, column=3, padx=5, pady=5, sticky="w")
         entry_tasa.insert(0, "1.00")
 
         ctk.CTkLabel(form_frame, text="Monto:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=5, pady=5, sticky="e")
-        entry_monto = ctk.CTkEntry(form_frame, width=150)
+        entry_monto = ctk.CTkEntry(form_frame, width=150, validate="key", validatecommand=(vcmd_monto, '%S', '%P'))
         entry_monto.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
         ctk.CTkLabel(form_frame, text="Método:", text_color=TEXTO_BLANCO).grid(row=1, column=2, padx=5, pady=5, sticky="e")
@@ -429,12 +424,14 @@ class GestionServicios:
             combo_moneda.set("USD")
 
             ctk.CTkLabel(grid, text="Tasa (1 USD):", text_color=TEXTO_BLANCO).grid(row=0, column=2, padx=5, pady=5)
-            entry_tasa = ctk.CTkEntry(grid, width=90)
+            vcmd_tasa = registrar_validador(ventana, 12)
+            vcmd_monto = registrar_validador(ventana, 12)
+            entry_tasa = ctk.CTkEntry(grid, width=90, validate="key", validatecommand=(vcmd_tasa, '%S', '%P'))
             entry_tasa.grid(row=0, column=3, padx=5, pady=5)
             entry_tasa.insert(0, "1.00")
 
             ctk.CTkLabel(grid, text="Monto:", text_color=TEXTO_BLANCO).grid(row=1, column=0, padx=5, pady=5)
-            entry_monto = ctk.CTkEntry(grid, width=120)
+            entry_monto = ctk.CTkEntry(grid, width=120, validate="key", validatecommand=(vcmd_monto, '%S', '%P'))
             entry_monto.grid(row=1, column=1, padx=5, pady=5)
 
             ctk.CTkLabel(grid, text="Método:", text_color=TEXTO_BLANCO).grid(row=1, column=2, padx=5, pady=5)

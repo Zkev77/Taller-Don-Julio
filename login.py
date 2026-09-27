@@ -11,9 +11,6 @@ from PIL import Image
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
-
 def registrar_error(tipo, valor, tb):
     mensaje = "".join(traceback.format_exception(tipo, valor, tb))
     try:

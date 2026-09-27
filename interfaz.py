@@ -26,9 +26,6 @@ class MenuTaller:
         self.root.minsize(1024, 600)
         self.root.configure(bg=FONDO_PRINCIPAL)
 
-        ctk.set_appearance_mode("dark")
-        ctk.set_default_color_theme("blue")
-
         self.modulo_actual = None
         self.frames_modulos = {}
 

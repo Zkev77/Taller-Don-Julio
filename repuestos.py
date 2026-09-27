@@ -4,10 +4,8 @@ import subprocess
 import customtkinter as ctk
 from tkinter import ttk, messagebox
 from database import Database
-from utilidades import formatear_fecha
+from utilidades import BAJO_STOCK, formatear_fecha, registrar_validador
 from colores_app import *
-
-BAJO_STOCK = 5
 
 
 class GestionRepuestos:
@@ -209,13 +207,6 @@ class GestionRepuestos:
                 return True
             return False
 
-        def solo_numeros_y_punto(caracter, texto_actual, max_len):
-            if caracter == '':
-                return True
-            if (caracter.isdigit() or caracter == '.') and len(texto_actual) <= max_len:
-                return True
-            return False
-
         def solo_digitos(caracter, texto_actual, max_len):
             if caracter == '':
                 return True
@@ -224,7 +215,7 @@ class GestionRepuestos:
             return False
 
         vcmd_nombre = ventana.register(lambda c, t: solo_letras_numeros_espacios(c, t, 100))
-        vcmd_precio = ventana.register(lambda c, t: solo_numeros_y_punto(c, t, 10))
+        vcmd_precio = registrar_validador(ventana, 10)
         vcmd_stock = ventana.register(lambda c, t: solo_digitos(c, t, 6))
         vcmd_proveedor = ventana.register(lambda c, t: solo_letras_numeros_espacios(c, t, 100))
 
