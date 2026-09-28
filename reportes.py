@@ -103,7 +103,7 @@ class GestionReportes:
 
         ventana = ctk.CTkToplevel(self.padre)
         ventana.title("📊 Estadísticas del Taller")
-        ventana.geometry("500x450")
+        ventana.geometry("600x450")
         ventana.resizable(False, False)
 
         marco = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)

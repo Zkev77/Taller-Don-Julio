@@ -251,6 +251,44 @@ class Database:
         exito, mensaje, _ = self.ejecutar_consulta(consulta, (cantidad, id_repuesto))
         return exito, mensaje
 
+    def ingresar_stock(self, id_repuesto, cantidad, motivo, usuario_id, usuario_nombre):
+        """Suma unidades al inventario y deja registrada la entrada.
+
+        Igual que descontar_stock: el cambio de stock y el movimiento van en la misma
+        transaccion, asi el inventario nunca queda modificado sin su registro.
+        """
+        if cantidad <= 0:
+            return False, "La cantidad debe ser mayor a 0."
+
+        conexion = self.obtener_conexion()
+        if not conexion:
+            return False, "Error de conexión"
+
+        cursor = conexion.cursor()
+        try:
+            cursor.execute("UPDATE repuestos SET stock = stock + %s WHERE id = %s",
+                           (cantidad, id_repuesto))
+            if cursor.rowcount == 0:
+                conexion.rollback()
+                return False, "No se encontró el repuesto."
+
+            cursor.execute(
+                """
+                    INSERT INTO movimientos_inventario
+                        (repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre)
+                    VALUES (%s, 'ENTRADA', %s, %s, %s, %s)
+                """,
+                (id_repuesto, cantidad, motivo, usuario_id, usuario_nombre)
+            )
+            conexion.commit()
+            return True, "Entrada registrada"
+        except Error as e:
+            conexion.rollback()
+            return False, f"Error: {e}"
+        finally:
+            cursor.close()
+            conexion.close()
+
     def registrar_movimiento(self, repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre):
         consulta = """
             INSERT INTO movimientos_inventario (repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre)
@@ -260,6 +298,55 @@ class Database:
             consulta, (repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre)
         )
         return exito, mensaje
+
+    def descontar_stock(self, id_repuesto, cantidad, motivo, usuario_id, usuario_nombre):
+        """Descuenta unidades del inventario y deja registrada la salida.
+
+        El descuento y el movimiento se guardan en la misma transaccion, para que nunca
+        quede stock modificado sin su registro. El "stock >= cantidad" dentro del UPDATE
+        impide que el inventario quede en negativo.
+        """
+        if cantidad <= 0:
+            return False, "La cantidad debe ser mayor a 0."
+
+        conexion = self.obtener_conexion()
+        if not conexion:
+            return False, "Error de conexión"
+
+        cursor = conexion.cursor()
+        try:
+            cursor.execute(
+                "UPDATE repuestos SET stock = stock - %s WHERE id = %s AND stock >= %s",
+                (cantidad, id_repuesto, cantidad)
+            )
+            if cursor.rowcount == 0:
+                conexion.rollback()
+                cursor.execute("SELECT stock FROM repuestos WHERE id = %s", (id_repuesto,))
+                fila = cursor.fetchone()
+                if not fila:
+                    return False, "No se encontró el repuesto."
+                disponibles = int(fila[0])
+                if cantidad > disponibles:
+                    return False, (f"No hay stock suficiente. Solo quedan "
+                                   f"{disponibles} unidades disponibles.")
+                return False, "No se pudo descontar el stock."
+
+            cursor.execute(
+                """
+                    INSERT INTO movimientos_inventario
+                        (repuesto_id, tipo, cantidad, motivo, usuario_id, usuario_nombre)
+                    VALUES (%s, 'SALIDA', %s, %s, %s, %s)
+                """,
+                (id_repuesto, cantidad, motivo, usuario_id, usuario_nombre)
+            )
+            conexion.commit()
+            return True, "Salida registrada"
+        except Error as e:
+            conexion.rollback()
+            return False, f"Error: {e}"
+        finally:
+            cursor.close()
+            conexion.close()
 
     def listar_movimientos(self, limite=200):
         consulta = """

@@ -4,7 +4,7 @@ import subprocess
 import customtkinter as ctk
 from tkinter import ttk, messagebox
 from database import Database
-from utilidades import BAJO_STOCK, formatear_fecha, registrar_validador
+from utilidades import BAJO_STOCK, registrar_validador
 from colores_app import *
 
 
@@ -52,6 +52,13 @@ class GestionRepuestos:
         )
         self.boton_reponer.pack(side="left", padx=5)
 
+        self.boton_gastar = ctk.CTkButton(
+            self.barra_herramientas, text="📤 Gastar Repuesto",
+            fg_color=COLOR_AMARILLO, hover_color=COLOR_ACENTO, text_color=TEXTO_BLANCO,
+            command=self.gastar_repuesto
+        )
+        self.boton_gastar.pack(side="left", padx=5)
+
         self.boton_refrescar = ctk.CTkButton(
             self.barra_herramientas, text="⟳ Refrescar",
             fg_color=FONDO_SIDEBAR, text_color=TEXTO_BLANCO,
@@ -66,18 +73,12 @@ class GestionRepuestos:
         )
         self.boton_pdf.pack(side="left", padx=5)
 
-        self.boton_historial = ctk.CTkButton(
-            self.barra_herramientas, text="🕓 Historial",
-            fg_color=COLOR_AZUL, text_color=TEXTO_BLANCO,
-            command=self.ver_historial
-        )
-        self.boton_historial.pack(side="left", padx=5)
-
         if self.rol == 'auditor':
             self.boton_agregar.configure(state="disabled")
             self.boton_editar.configure(state="disabled")
             self.boton_eliminar.configure(state="disabled")
             self.boton_reponer.configure(state="disabled")
+            self.boton_gastar.configure(state="disabled")
         elif self.rol == 'mecanico':
             self.barra_herramientas.pack_forget()
             ctk.CTkLabel(
@@ -293,18 +294,29 @@ class GestionRepuestos:
                     descripcion=f"{accion} en repuestos: {nombre}"
                 )
 
+                # Si el movimiento no se puede guardar, se avisa: el stock ya quedo
+                # guardado y no se debe perder en silencio.
+                ok_mov, error_mov = True, ""
                 if id_repuesto is None:
                     if stock_val > 0:
-                        self.bd.registrar_movimiento(registro_id, "ENTRADA", stock_val,
-                                                     "Stock inicial", self.usuario_id, self.usuario_actual)
+                        ok_mov, error_mov = self.bd.registrar_movimiento(
+                            registro_id, "ENTRADA", stock_val, "Stock inicial",
+                            self.usuario_id, self.usuario_actual)
                 else:
                     diferencia = stock_val - stock_anterior
                     if diferencia != 0:
                         tipo = "ENTRADA" if diferencia > 0 else "SALIDA"
-                        self.bd.registrar_movimiento(registro_id, tipo, abs(diferencia),
-                                                     "Ajuste manual", self.usuario_id, self.usuario_actual)
+                        ok_mov, error_mov = self.bd.registrar_movimiento(
+                            registro_id, tipo, abs(diferencia), "Ajuste manual",
+                            self.usuario_id, self.usuario_actual)
 
-                messagebox.showinfo("Éxito", mensaje)
+                if not ok_mov:
+                    messagebox.showwarning(
+                        "Movimiento no registrado",
+                        f"El stock se guardo, pero no se pudo registrar el movimiento "
+                        f"de inventario:\n{error_mov}", parent=ventana)
+
+                messagebox.showinfo("Éxito", mensaje, parent=ventana)
                 ventana.destroy()
                 self.cargar_datos()
             else:
@@ -345,10 +357,9 @@ class GestionRepuestos:
                 messagebox.showerror("Error", "Ingrese una cantidad válida (mayor a 0)", parent=ventana)
                 return
 
-            exito, mensaje = self.bd.incrementar_stock(id_repuesto, cantidad)
+            exito, mensaje = self.bd.ingresar_stock(
+                id_repuesto, cantidad, "Reposición de stock", self.usuario_id, self.usuario_actual)
             if exito:
-                self.bd.registrar_movimiento(id_repuesto, "ENTRADA", cantidad,
-                                             "Reposición de stock", self.usuario_id, self.usuario_actual)
                 self.bd.registrar_log(
                     usuario_id=self.usuario_id,
                     usuario_nombre=self.usuario_actual,
@@ -365,6 +376,59 @@ class GestionRepuestos:
 
         boton_guardar = ctk.CTkButton(marco, text="Agregar al Stock", fg_color=COLOR_VERDE, text_color=TEXTO_BLANCO, command=guardar)
         boton_guardar.pack(pady=15)
+
+    def gastar_repuesto(self):
+        id_repuesto = self.obtener_seleccionado()
+        if not id_repuesto:
+            return
+        datos = self.bd.obtener_repuesto_por_id(id_repuesto)
+        if not datos:
+            messagebox.showerror("Error", "No se encontró el repuesto", parent=self.marco)
+            return
+
+        ventana = ctk.CTkToplevel(self.padre)
+        ventana.title("Gastar Repuesto")
+        ventana.geometry("400x250")
+        ventana.resizable(False, False)
+
+        marco = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
+        marco.pack(fill="both", expand=True, padx=20, pady=20)
+
+        ctk.CTkLabel(marco, text=datos['nombre'], font=("Inter", 14, "bold"), text_color=TEXTO_BLANCO).pack(pady=5)
+        ctk.CTkLabel(marco, text=f"Stock actual: {datos['stock']}", text_color=TEXTO_GRIS).pack(pady=5)
+        ctk.CTkLabel(marco, text="Cantidad a descontar:", text_color=TEXTO_BLANCO).pack(pady=5)
+        campo_cantidad = ctk.CTkEntry(marco, width=150)
+        campo_cantidad.pack(pady=5)
+
+        def guardar():
+            try:
+                cantidad = int(campo_cantidad.get().strip())
+                if cantidad <= 0:
+                    raise ValueError
+            except ValueError:
+                messagebox.showerror("Error", "Ingrese una cantidad válida (mayor a 0)", parent=ventana)
+                return
+
+            exito, mensaje = self.bd.descontar_stock(
+                id_repuesto, cantidad, "Consumo de repuesto", self.usuario_id, self.usuario_actual)
+            if exito:
+                self.bd.registrar_log(
+                    usuario_id=self.usuario_id,
+                    usuario_nombre=self.usuario_actual,
+                    tabla="repuestos",
+                    registro_id=id_repuesto,
+                    accion="UPDATE",
+                    descripcion=f"Consumo de '{datos['nombre']}' (-{cantidad})"
+                )
+                messagebox.showinfo("Éxito", "Stock actualizado", parent=ventana)
+                ventana.destroy()
+                self.cargar_datos()
+            else:
+                messagebox.showerror("Error", mensaje, parent=ventana)
+
+        boton_guardar = ctk.CTkButton(marco, text="Descontar del Stock", fg_color=COLOR_VERDE,
+                                      text_color=TEXTO_BLANCO, command=guardar)
+        boton_guardar.pack(pady=20)
 
     def eliminar_repuesto(self):
         id_repuesto = self.obtener_seleccionado()
@@ -431,54 +495,3 @@ class GestionRepuestos:
                 subprocess.call(['xdg-open', nombre_archivo])
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo abrir el PDF: {e}", parent=self.marco)
-
-    def ver_historial(self):
-        movimientos = self.bd.listar_movimientos(200) or []
-
-        ventana = ctk.CTkToplevel(self.padre)
-        ventana.title("Historial de Movimientos de Inventario")
-        ventana.geometry("820x500")
-        ventana.resizable(False, False)
-
-        marco = ctk.CTkFrame(ventana, fg_color=FONDO_TARJETA)
-        marco.pack(fill="both", expand=True, padx=20, pady=20)
-
-        ctk.CTkLabel(
-            marco, text="Movimientos de Inventario",
-            font=("Inter", 16, "bold"), text_color=TEXTO_BLANCO
-        ).pack(pady=10)
-
-        arbol = ttk.Treeview(
-            marco,
-            columns=("ID", "Repuesto", "Tipo", "Cantidad", "Motivo", "Usuario", "Fecha"),
-            show="headings"
-        )
-        columnas = [
-            ("ID", 50), ("Repuesto", 150), ("Tipo", 80), ("Cantidad", 80),
-            ("Motivo", 200), ("Usuario", 100), ("Fecha", 130)
-        ]
-        for columna, width in columnas:
-            arbol.heading(columna, text=columna)
-            arbol.column(columna, width=width, anchor="center")
-
-        scroll = ttk.Scrollbar(marco, orient="vertical", command=arbol.yview)
-        arbol.configure(yscrollcommand=scroll.set)
-        arbol.pack(side="left", fill="both", expand=True, pady=5)
-        scroll.pack(side="right", fill="y")
-
-        for m in movimientos:
-            arbol.insert("", "end", values=(
-                m['id'],
-                m['repuesto'],
-                m['tipo'],
-                m['cantidad'],
-                m['motivo'] or '',
-                m['usuario_nombre'] or 'Sistema',
-                formatear_fecha(m['fecha_hora'])
-            ))
-
-        if not movimientos:
-            ctk.CTkLabel(marco, text="No hay movimientos registrados", text_color=TEXTO_GRIS).pack(pady=10)
-
-        boton_cerrar = ctk.CTkButton(marco, text="Cerrar", fg_color=COLOR_ACENTO, text_color=TEXTO_BLANCO, command=ventana.destroy)
-        boton_cerrar.pack(pady=10)
