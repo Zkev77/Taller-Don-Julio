@@ -15,7 +15,7 @@ class Database:
         return cls._instance
 
     def _cargar_configuracion(self):
-        load_dotenv()
+        load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
         self.servidor = os.getenv('DB_HOST', 'localhost')
         self.usuario = os.getenv('DB_USER', '')
         self.contrasena = os.getenv('DB_PASSWORD', '')
@@ -167,17 +167,13 @@ class Database:
         exito, mensaje, _ = self.ejecutar_consulta(consulta, (id_vehiculo,))
         return exito, mensaje
 
-    # CORREGIDO: Agregado total_orden_usd en la consulta
     def listar_ordenes_completas(self):
         consulta = """
-            SELECT 
-                o.id, o.descripcion, o.estado, o.fecha, o.total_orden_usd,
-                v.placa, v.marca, v.modelo,
-                c.nombre AS cliente_nombre
-            FROM ordenes o
-            JOIN vehiculos v ON o.vehiculo_id = v.id
-            JOIN clientes c ON v.cliente_id = c.id
-            ORDER BY o.fecha DESC
+            SELECT orden_id AS id, descripcion, estado, fecha, total_orden_usd,
+                   placa, marca, modelo,
+                   cliente AS cliente_nombre
+            FROM v_ordenes_completas
+            ORDER BY fecha DESC
         """
         return self.obtener_todos(consulta)
 
@@ -191,7 +187,7 @@ class Database:
         return self.obtener_todos(consulta)
 
     def crear_orden(self, vehiculo_id, descripcion, estado="Ingresado", total=0):
-        consulta = "INSERT INTO ordenes (vehiculo_id, descripcion, estado, fecha, total_orden_usd) VALUES (%s, %s, %s, NOW(), %s)"
+        consulta = "INSERT INTO ordenes (vehiculo_id, descripcion, estado, fecha, mano_de_obra) VALUES (%s, %s, %s, NOW(), %s)"
         exito, mensaje, ultimo_id = self.ejecutar_consulta(consulta, (vehiculo_id, descripcion, estado, total))
         return exito, mensaje, ultimo_id
 
@@ -427,20 +423,15 @@ class Database:
     def obtener_detalle_orden_pagos(self, id_orden):
         consulta = """
             SELECT 
-                o.id, 
-                o.descripcion, 
-                o.estado, 
-                COALESCE(o.total_orden_usd, 0) as total_orden_usd,
-                COALESCE(SUM(p.monto_ref_usd), 0) as total_pagado,
-                c.nombre AS cliente_nombre,
-                CONCAT(v.marca, ' ', v.modelo, ' (', v.placa, ')') AS vehiculo
-            FROM ordenes o
-            JOIN vehiculos v ON o.vehiculo_id = v.id
-            JOIN clientes c ON v.cliente_id = c.id
-            LEFT JOIN pagos p ON o.id = p.orden_id
-            WHERE o.id = %s
-            GROUP BY o.id, o.descripcion, o.estado, o.total_orden_usd,
-                     c.nombre, v.marca, v.modelo, v.placa
+                orden_id AS id, 
+                descripcion, 
+                estado, 
+                COALESCE(total_orden_usd, 0) AS total_orden_usd,
+                COALESCE(total_pagado, 0) AS total_pagado,
+                cliente AS cliente_nombre,
+                CONCAT(marca, ' ', modelo, ' (', placa, ')') AS vehiculo
+            FROM v_ordenes_completas
+            WHERE orden_id = %s
         """
         resultado = self.obtener_todos(consulta, (id_orden,))
         if resultado:
@@ -455,6 +446,20 @@ class Database:
             'cliente_nombre': 'N/A',
             'vehiculo': 'N/A'
         }
+
+    def listar_cuentas_por_cobrar(self):
+        """Todas las ordenes con su total, lo pagado y el saldo pendiente."""
+        consulta = """
+            SELECT orden_id AS id,
+                   cliente,
+                   CONCAT(marca, ' ', modelo) AS vehiculo,
+                   COALESCE(total_orden_usd, 0) AS total_orden_usd,
+                   COALESCE(total_pagado, 0) AS pagado,
+                   COALESCE(saldo, 0) AS saldo
+            FROM v_ordenes_completas
+            ORDER BY orden_id DESC
+        """
+        return self.obtener_todos(consulta)
 
     def obtener_totales_recaudados(self):
         """Total cobrado historico y total del mes en curso, en USD."""
@@ -485,20 +490,17 @@ class Database:
     def obtener_recaudos_del_mes(self, anio, mes):
         """Detalle por orden de lo cobrado en un mes, con el saldo pendiente de cada una."""
         consulta = """
-            SELECT o.id AS orden_id,
-                   c.nombre AS cliente,
-                   v.placa,
-                   o.total_orden_usd,
+            SELECT oc.orden_id AS orden_id,
+                   oc.cliente,
+                   oc.placa,
+                   oc.total_orden_usd,
                    SUM(p.monto_ref_usd) AS cobrado_mes,
-                   (SELECT COALESCE(SUM(p2.monto_ref_usd), 0)
-                      FROM pagos p2 WHERE p2.orden_id = o.id) AS cobrado_total
-            FROM ordenes o
-            JOIN vehiculos v ON o.vehiculo_id = v.id
-            JOIN clientes c ON v.cliente_id = c.id
-            JOIN pagos p ON p.orden_id = o.id
+                   COALESCE(oc.total_pagado, 0) AS cobrado_total
+            FROM v_ordenes_completas oc
+            JOIN pagos p ON p.orden_id = oc.orden_id
             WHERE YEAR(p.fecha_pago) = %s AND MONTH(p.fecha_pago) = %s
-            GROUP BY o.id, c.nombre, v.placa, o.total_orden_usd
-            ORDER BY o.id
+            GROUP BY oc.orden_id, oc.cliente, oc.placa, oc.total_orden_usd, oc.total_pagado
+            ORDER BY oc.orden_id
         """
         return self.obtener_todos(consulta, (anio, mes)) or []
 

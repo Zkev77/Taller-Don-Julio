@@ -2,6 +2,9 @@ import customtkinter as ctk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
 import os
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
 from database import Database
 from utilidades import formatear_fecha
 from colores_app import *
@@ -84,29 +87,25 @@ class GestionPresupuestos:
         for row in self.arbol_ordenes.get_children():
             self.arbol_ordenes.delete(row)
 
-        consulta = """
-            SELECT o.id, c.nombre as cliente, CONCAT(v.marca, ' ', v.modelo) as vehiculo,
-                   o.total_orden_usd,
-                   COALESCE(SUM(p.monto_ref_usd), 0) as pagado,
-                   (o.total_orden_usd - COALESCE(SUM(p.monto_ref_usd), 0)) as saldo
-            FROM ordenes o
-            JOIN vehiculos v ON o.vehiculo_id = v.id
-            JOIN clientes c ON v.cliente_id = c.id
-            LEFT JOIN pagos p ON o.id = p.orden_id
-            GROUP BY o.id, c.nombre, v.marca, v.modelo, o.total_orden_usd
-            ORDER BY o.id DESC
-        """
-        ordenes = self.bd.obtener_todos(consulta)
+        ordenes = self.bd.listar_cuentas_por_cobrar()
+        if ordenes is None:
+            messagebox.showerror(
+                "Error de base de datos",
+                "No se pudieron cargar las cuentas por cobrar.\nRevise la conexión con la base de datos.",
+                parent=self.marco
+            )
+            return
+
         for o in ordenes:
-            saldo = o['saldo']
+            saldo = float(o['saldo'])
             estado = "Saldado" if saldo <= 0.01 else "Pendiente"
             tag = "pagado" if estado == "Saldado" else "pendiente"
             self.arbol_ordenes.insert("", "end", values=(
                 o['id'],
                 o['cliente'],
                 o['vehiculo'],
-                f"${o['total_orden_usd']:.2f}",
-                f"${o['pagado']:.2f}",
+                f"${float(o['total_orden_usd']):.2f}",
+                f"${float(o['pagado']):.2f}",
                 f"${max(0, saldo):.2f}",
                 estado
             ), tags=(tag,))
@@ -161,6 +160,14 @@ class GestionPresupuestos:
             self.arbol_historial.delete(row)
 
         pagos = self.bd.obtener_historial_pagos()
+        if pagos is None:
+            messagebox.showerror(
+                "Error de base de datos",
+                "No se pudo cargar el historial de pagos.\nRevise la conexión con la base de datos.",
+                parent=self.marco
+            )
+            return
+
         total_usd = 0
         for p in pagos:
             total_usd += p['monto_ref_usd']
@@ -399,9 +406,9 @@ class GestionPresupuestos:
                                                  variable=self.mes_reporte_var)
         self.lista_mes_reporte.pack(side="left")
 
-        boton_guardar = ctk.CTkButton(barra, text="\U0001F4BE Guardar como .txt", fg_color=COLOR_VERDE,
+        boton_guardar = ctk.CTkButton(barra, text="\U0001F4BE Guardar como Excel", fg_color=COLOR_VERDE,
                                       text_color=TEXTO_BLANCO, state="disabled",
-                                      command=self._guardar_reporte_txt)
+                                      command=self._guardar_reporte_excel)
         boton_guardar.pack(side="left", padx=10)
 
         self.caja_reporte = ctk.CTkTextbox(marco, font=("Courier New", 12), wrap="none")
@@ -436,10 +443,108 @@ class GestionPresupuestos:
 
         self._boton_guardar.configure(
             state="normal" if filas else "disabled",
-            text="\U0001F4BE Guardar como .txt" if filas else "Sin datos para guardar"
+            text="\U0001F4BE Guardar como Excel" if filas else "Sin datos para guardar"
         )
 
-    def _guardar_reporte_txt(self):
+    def _generar_excel_reporte(self, filas, anio, mes, nombre_mes):
+        """Arma el libro de Excel con el detalle por orden y el resumen del mes."""
+        libro = Workbook()
+        hoja = libro.active
+        hoja.title = f"Recaudos {nombre_mes} {anio}"
+
+        azul = PatternFill("solid", fgColor="1F4E78")
+        gris = PatternFill("solid", fgColor="DDEBF7")
+        blanco = Font(bold=True, color="FFFFFF")
+        negrita = Font(bold=True)
+        centrado = Alignment(horizontal="center", vertical="center")
+        derecha = Alignment(horizontal="right", vertical="center")
+        borde = Border(*(Side(style="thin", color="B0B0B0"),) * 4)
+        formato_dinero = '#,##0.00'
+
+        hoja.merge_cells("A1:F1")
+        titulo = hoja["A1"]
+        titulo.value = "TALLER DON JULIO - REPORTE DE RECAUDOS"
+        titulo.font = Font(bold=True, size=14, color="FFFFFF")
+        titulo.fill = azul
+        titulo.alignment = centrado
+        hoja.row_dimensions[1].height = 26
+
+        hoja.merge_cells("A2:F2")
+        hoja["A2"] = f"Periodo: {nombre_mes} {anio}   |   Generado: {datetime.now():%Y-%m-%d %H:%M}   |   Usuario: {self.usuario_actual}"
+        hoja["A2"].alignment = centrado
+        hoja["A2"].font = Font(italic=True)
+
+        encabezados = ["#", "Cliente", "Placa", "Total Orden (USD)", "Cobrado Mes (USD)", "Saldo (USD)"]
+        fila_encabezado = 4
+        for columna, texto in enumerate(encabezados, start=1):
+            celda = hoja.cell(row=fila_encabezado, column=columna, value=texto)
+            celda.font = blanco
+            celda.fill = azul
+            celda.alignment = centrado
+            celda.border = borde
+
+        fila_actual = fila_encabezado + 1
+        for i, f in enumerate(filas, start=1):
+            total_orden = float(f['total_orden_usd'] or 0)
+            cobrado_mes = float(f['cobrado_mes'] or 0)
+            saldo = total_orden - float(f['cobrado_total'] or 0)
+            valores = [i, f['cliente'], f['placa'], total_orden, cobrado_mes, saldo]
+            for columna, valor in enumerate(valores, start=1):
+                celda = hoja.cell(row=fila_actual, column=columna, value=valor)
+                celda.border = borde
+                if columna in (4, 5, 6):
+                    celda.number_format = formato_dinero
+                    celda.alignment = derecha
+                elif columna in (1, 3):
+                    celda.alignment = centrado
+            fila_actual += 1
+
+        fila_total = fila_actual
+        hoja.cell(row=fila_total, column=1, value="TOTALES").font = negrita
+        hoja.merge_cells(start_row=fila_total, start_column=1, end_row=fila_total, end_column=3)
+        total_cobrado = sum(float(f['cobrado_mes'] or 0) for f in filas)
+        total_saldos = sum(float(f['total_orden_usd'] or 0) - float(f['cobrado_total'] or 0) for f in filas)
+        for columna, valor in ((4, sum(float(f['total_orden_usd'] or 0) for f in filas)),
+                               (5, total_cobrado), (6, total_saldos)):
+            celda = hoja.cell(row=fila_total, column=columna, value=valor)
+            celda.font = negrita
+            celda.number_format = formato_dinero
+            celda.alignment = derecha
+        for columna in range(1, 7):
+            hoja.cell(row=fila_total, column=columna).fill = gris
+            hoja.cell(row=fila_total, column=columna).border = borde
+
+        fila_resumen = fila_total + 2
+        hoja.cell(row=fila_resumen, column=1, value="RESUMEN DEL MES").font = negrita
+        resumen = [
+            ("Órdenes con cobros", len(filas)),
+            ("Total cobrado (USD)", total_cobrado),
+            ("Saldo pendiente (USD)", total_saldos),
+        ]
+        for offset, (etiqueta, valor) in enumerate(resumen, start=1):
+            celda_etiqueta = hoja.cell(row=fila_resumen + offset, column=1, value=etiqueta)
+            celda_etiqueta.font = negrita
+            celda_valor = hoja.cell(row=fila_resumen + offset, column=2, value=valor)
+            if isinstance(valor, float):
+                celda_valor.number_format = formato_dinero
+                celda_valor.alignment = derecha
+
+        fila_nota = fila_resumen + len(resumen) + 2
+        nota = hoja.cell(row=fila_nota, column=1,
+                         value="Nota: este reporte muestra el dinero cobrado (ingresos) del periodo. "
+                               "No descuenta el costo de los repuestos, la mano de obra ni los gastos "
+                               "generales, por lo que no equivale a la ganancia final del taller.")
+        nota.alignment = Alignment(wrap_text=True, vertical="top")
+        hoja.merge_cells(start_row=fila_nota, start_column=1, end_row=fila_nota + 2, end_column=6)
+
+        anchos = (5, 26, 12, 18, 19, 15)
+        for columna, ancho in enumerate(anchos, start=1):
+            hoja.column_dimensions[get_column_letter(columna)].width = ancho
+        hoja.freeze_panes = "A5"
+
+        return libro, total_cobrado
+
+    def _guardar_reporte_excel(self):
         datos = self._meses_reporte.get(self.mes_reporte_var.get())
         if not datos:
             return
@@ -450,22 +555,21 @@ class GestionPresupuestos:
                                 parent=self.marco)
             return
 
-        texto, total = self._generar_texto_reporte(filas, datos['anio'], datos['mes'],
-                                                   MESES_ES[datos['mes'] - 1])
-        sugerencia = f"reporte_recaudos_{MESES_ES[datos['mes'] - 1].lower()}_{datos['anio']}.txt"
+        nombre_mes = MESES_ES[datos['mes'] - 1]
+        libro, total = self._generar_excel_reporte(filas, datos['anio'], datos['mes'], nombre_mes)
+        sugerencia = f"reporte_recaudos_{nombre_mes.lower()}_{datos['anio']}.xlsx"
         ruta = filedialog.asksaveasfilename(
             parent=self.marco,
             title="Guardar reporte de recaudos",
-            defaultextension=".txt",
+            defaultextension=".xlsx",
             initialfile=sugerencia,
-            filetypes=[("Archivo de texto", "*.txt"), ("Todos los archivos", "*.*")]
+            filetypes=[("Libro de Excel", "*.xlsx"), ("Todos los archivos", "*.*")]
         )
         if not ruta:
             return
 
         try:
-            with open(ruta, "w", encoding="utf-8") as archivo:
-                archivo.write(texto)
+            libro.save(ruta)
         except OSError as e:
             messagebox.showerror("Error", f"No se pudo guardar el archivo:\n{e}", parent=self.marco)
             return
